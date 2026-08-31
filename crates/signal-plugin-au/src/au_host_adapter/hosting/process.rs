@@ -89,6 +89,20 @@ pub struct AuProcessSession {
     processing: bool,
 }
 
+impl std::fmt::Debug for AuProcessSession {
+    /// Reports the hosted unit and render shape. The render input state and
+    /// buffer list are FFI scratch handed to `AudioUnitRender`.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("AuProcessSession")
+            .field("unit", &self.unit)
+            .field("max_frames", &self.output_left.len())
+            .field("sample_time", &self.sample_time)
+            .field("processing", &self.processing)
+            .finish_non_exhaustive()
+    }
+}
+
 // Safety: the session is handed to exactly one audio thread;
 // `AudioUnitRender` is the AU render-thread entry point, the boxed input
 // stash is only touched by the unit's synchronous mid-render pull on that

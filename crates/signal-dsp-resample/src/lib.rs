@@ -55,6 +55,7 @@ impl ResampleConfig {
 }
 
 /// Stateful chunked mono resampler.
+#[derive(Debug)]
 pub struct StreamingResampler {
     config: ResampleConfig,
     step: f64,

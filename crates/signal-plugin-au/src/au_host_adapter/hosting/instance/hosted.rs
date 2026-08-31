@@ -21,6 +21,7 @@ use crate::au_host_adapter::gui::{AuCocoaViewInfo, AuGuiSession};
 /// thread; audio processing runs through [`AuProcessSession`], which the
 /// sandbox moves onto its audio thread. While a process session is live the
 /// owner must not run lifecycle transitions until the session stops.
+#[derive(Debug)]
 pub struct AuHostedInstance {
     #[cfg(target_os = "macos")]
     unit: ffi::AudioUnit,

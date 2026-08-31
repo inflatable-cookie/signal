@@ -315,6 +315,13 @@ fn map_cyclic_error(
 /// The result contains exactly `request.target_frames * request.channels`
 /// finite interleaved samples. Unsupported requests return a typed error;
 /// this function never falls back to the transparent stretcher.
+///
+/// # Panics
+///
+/// Panics if request validation admits a `Cyclic` request without a cycle
+/// length. Unsupported and malformed requests return
+/// [`CreativeStretchError`] instead, so this is a validator invariant rather
+/// than an input condition.
 pub fn render_creative_stretch(
     request: CreativeStretchRequest<'_>,
 ) -> Result<Vec<Sample>, CreativeStretchError> {

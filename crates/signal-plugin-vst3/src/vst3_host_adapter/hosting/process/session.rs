@@ -47,6 +47,21 @@ pub struct Vst3ProcessSession {
     pub(crate) midi_cc_params: Option<Arc<[Option<u32>; VST3_MIDI_CONTROLLER_COUNT]>>,
 }
 
+impl std::fmt::Debug for Vst3ProcessSession {
+    /// Reports the hosted processor and block shape. The bus buffers,
+    /// parameter changes, and event lists are per-block VST3 ABI scratch.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("Vst3ProcessSession")
+            .field("processor", &self.processor)
+            .field("sample_rate_hz", &self.sample_rate_hz)
+            .field("project_time_samples", &self.project_time_samples)
+            .field("max_frames", &self.output_left.len())
+            .field("processing", &self.processing)
+            .finish_non_exhaustive()
+    }
+}
+
 // Safety: the session is handed to exactly one audio thread;
 // `setProcessing`/`process` are the VST3 processing-thread methods, and the
 // owner serializes lifecycle against the session per the type contract.

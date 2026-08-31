@@ -49,6 +49,25 @@ pub struct ResumableOfflineStretch {
     pub(in crate::resumable) flushed: bool,
 }
 
+impl std::fmt::Debug for ResumableOfflineStretch {
+    /// Reports configuration and render progress. The FFT plans are foreign
+    /// trait objects and the per-channel state and rings are working buffers.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("ResumableOfflineStretch")
+            .field("config", &self.config)
+            .field("window_size", &self.window_size)
+            .field("analysis_hop", &self.analysis_hop)
+            .field("bins", &self.bins)
+            .field("channels", &self.channels.len())
+            .field("accepted_source_frames", &self.accepted_source_frames)
+            .field("delivered_output_frames", &self.delivered_output_frames)
+            .field("target_output_frames", &self.target_output_frames)
+            .field("flushed", &self.flushed)
+            .finish_non_exhaustive()
+    }
+}
+
 impl ResumableOfflineStretch {
     /// Construct a renderer and allocate all carried state.
     pub fn new(config: ResumableStretchConfig) -> Result<Self, StretchRenderError> {

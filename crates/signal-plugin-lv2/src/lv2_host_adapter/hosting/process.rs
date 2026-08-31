@@ -16,6 +16,7 @@ use super::support::*;
 /// and must not run lifecycle transitions while the session is live.
 /// Ports stay connected from activation, so a block is exactly: copy in,
 /// `run(n)`, copy out — alloc-free.
+#[derive(Debug)]
 pub struct Lv2ProcessSession {
     pub(crate) handle: *mut c_void,
     pub(crate) run: unsafe extern "C" fn(*mut c_void, u32),

@@ -90,6 +90,25 @@ pub struct Lv2HostedInstance {
     _library: Library,
 }
 
+impl std::fmt::Debug for Lv2HostedInstance {
+    /// Reports bundle identity, lifecycle state, and port shape. The
+    /// descriptor, instance handle, URID feature set, and loaded library are
+    /// LV2 ABI objects and are not formatted.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("Lv2HostedInstance")
+            .field("bundle_path", &self.bundle_path)
+            .field("handle", &self.handle)
+            .field("state", &self.state)
+            .field("parameters", &self.parameters.len())
+            .field("control_ports", &self.control_slots.len())
+            .field("audio_inputs", &self.audio_inputs.len())
+            .field("audio_outputs", &self.audio_outputs.len())
+            .field("activated_max_frames", &self.activated_max_frames)
+            .finish_non_exhaustive()
+    }
+}
+
 impl Lv2HostedInstance {
     /// Load `plugin_uri` from the `.lv2` bundle at `bundle_root`: re-parse
     /// the bundle TTL (same-crate discovery functions), resolve the plugin
@@ -203,6 +222,14 @@ impl Lv2HostedInstance {
     /// preallocate planar audio buffers at `max_frames` and connect the
     /// audio ports, connect any remaining port to NULL, then run the
     /// plugin's `activate()`. No allocation happens after this point.
+    ///
+    /// # Panics
+    ///
+    /// Panics if a control port has no preallocated slot, or if the port
+    /// layout names more audio ports than were preallocated. Both are built
+    /// from the same parsed TTL model immediately above, so a panic here
+    /// means the model and the preallocation disagree — not that the bundle
+    /// was malformed, which is reported as a typed error instead.
     pub fn activate(
         &mut self,
         sample_rate_hz: f64,

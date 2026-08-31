@@ -42,6 +42,22 @@ pub struct ClapProcessSession {
     pub(in crate::hosting::process) param_out: Box<ParamOutCapture>,
 }
 
+impl std::fmt::Debug for ClapProcessSession {
+    /// Reports the hosted plugin and block shape. The bus buffers and event
+    /// lists are per-block CLAP ABI scratch.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("ClapProcessSession")
+            .field("plugin", &self.plugin)
+            .field("sample_rate_hz", &self.sample_rate_hz)
+            .field("max_frames", &self.max_frames)
+            .field("main_input_bus", &self.main_input_bus)
+            .field("main_output_bus", &self.main_output_bus)
+            .field("processing", &self.processing)
+            .finish_non_exhaustive()
+    }
+}
+
 // Safety: the session is handed to exactly one audio thread; CLAP's process
 // and start/stop_processing are audio-thread functions, and the owner
 // serializes lifecycle against the session per the type contract above.

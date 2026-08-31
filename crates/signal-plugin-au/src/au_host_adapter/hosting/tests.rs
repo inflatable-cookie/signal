@@ -26,7 +26,7 @@ fn load_key_parses_the_fourcc_triple() {
 }
 
 fn error_token(result: Result<AuHostedInstance, AuHostingError>) -> String {
-    result.err().expect("expected hosting error").token
+    result.expect_err("expected hosting error").token
 }
 
 #[test]

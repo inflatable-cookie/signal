@@ -24,6 +24,20 @@ pub struct Vst3GuiSession {
     height: u32,
 }
 
+impl std::fmt::Debug for Vst3GuiSession {
+    /// Reports the view handle and window geometry. The plug frame is a host
+    /// callback object handed to the plugin over the VST3 ABI.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("Vst3GuiSession")
+            .field("view", &self.view)
+            .field("attached", &self.attached)
+            .field("width", &self.width)
+            .field("height", &self.height)
+            .finish_non_exhaustive()
+    }
+}
+
 impl Vst3GuiSession {
     /// Platform check + `setFrame` + `getSize` + `attached`: the
     /// embedded-editor open sequence, in spec order, over a freshly

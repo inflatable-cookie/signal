@@ -33,6 +33,21 @@ unsafe impl Sync for SpscRing {}
 // SAFETY: f32 has no thread affinity; moving the ring moves plain data.
 unsafe impl Send for SpscRing {}
 
+impl std::fmt::Debug for SpscRing {
+    /// Reports shape and counters only. The storage is deliberately not
+    /// formatted: reading a slot outside the SPSC discipline would race the
+    /// other side, and `capacity`, `len`, and `overrun_samples` already read
+    /// through the published atomics.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("SpscRing")
+            .field("capacity", &self.capacity())
+            .field("len", &self.len())
+            .field("overrun_samples", &self.overrun_samples())
+            .finish_non_exhaustive()
+    }
+}
+
 impl SpscRing {
     /// Build a ring holding at least `min_capacity` samples (rounded up to a
     /// power of two).

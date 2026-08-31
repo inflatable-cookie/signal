@@ -18,6 +18,7 @@ use signal_render_plane::{PluginBlockProcessor, RenderBlockPluginEvent};
 ///
 /// LV2 is a push model with no start/stop-processing handshake; the lazy
 /// `start()` on the first processed block is surface parity only.
+#[derive(Debug)]
 pub struct InProcessLv2Processor {
     /// Field order matters: the session must drop before the instance
     /// (its raw pointers target the instance-owned port buffers).

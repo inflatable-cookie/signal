@@ -42,6 +42,21 @@ pub struct CaptureSession {
     path: PathBuf,
 }
 
+impl std::fmt::Debug for CaptureSession {
+    /// Reports the destination and negotiated stream shape. The boxed stream
+    /// handle is a trait object and the ring is read only through its own
+    /// published counters.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("CaptureSession")
+            .field("path", &self.path)
+            .field("sample_rate_hz", &self.sample_rate_hz())
+            .field("channels", &self.channels())
+            .field("writer_running", &self.writer.is_some())
+            .finish_non_exhaustive()
+    }
+}
+
 impl CaptureSession {
     /// Open an input stream on `backend` and start capturing to a Float32
     /// WAV at `wav_path`. The WAV is written at the stream's *negotiated*
@@ -270,6 +285,12 @@ impl CaptureSession {
 
     /// Stop capturing: drop the input stream (no more producer), let the
     /// writer drain the ring fully, finalize the WAV, and report.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the writer thread is already gone. `stop` consumes the
+    /// session, so the handle can only be taken once; a panic here means the
+    /// session was constructed without a writer.
     pub fn stop(mut self) -> Result<CaptureReport, InputStreamError> {
         let sample_rate_hz = self.stream.sample_rate_hz();
         let channels = self.stream.channels();

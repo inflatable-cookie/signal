@@ -38,6 +38,21 @@ pub struct ConvolutionReverbProcessor {
     max_frames: usize,
 }
 
+impl std::fmt::Debug for ConvolutionReverbProcessor {
+    /// Reports the mix and latency configuration. The convolver state is
+    /// behind a mutex that the render path holds per block, so `fmt` does not
+    /// take it.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("ConvolutionReverbProcessor")
+            .field("wet", &self.wet)
+            .field("dry", &self.dry)
+            .field("latency", &self.latency)
+            .field("max_frames", &self.max_frames)
+            .finish_non_exhaustive()
+    }
+}
+
 impl ConvolutionReverbProcessor {
     /// Build a reverb over per-channel impulse responses. `partition_block`
     /// sets the internal FFT partition (and therefore the wet-path latency);

@@ -37,6 +37,7 @@ impl std::error::Error for ClapHostingError {}
 /// A dlopen'd CLAP library with its entry initialized. Shared by discovery
 /// and hosting so both speak the same loading path. Deinitializes the entry
 /// and closes the library on drop.
+#[derive(Debug)]
 pub struct LoadedClapEntry {
     /// Keeps the dynamic library mapped for the entry's lifetime.
     _library: Library,

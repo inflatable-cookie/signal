@@ -22,6 +22,7 @@ use signal_plugin_vst3::{Vst3HostedInstance, Vst3ProcessSession};
 ///
 /// `setProcessing(true)` runs lazily on the first processed block, which is
 /// the audio thread — matching VST3's processing-thread contract.
+#[derive(Debug)]
 pub struct InProcessVst3Processor {
     /// Field order matters: the session must drop before the instance.
     session: Mutex<Vst3ProcessSession>,

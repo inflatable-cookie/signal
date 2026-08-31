@@ -100,6 +100,20 @@ pub struct MonitorSession {
     stream: Box<dyn InputStreamHandle>,
 }
 
+impl std::fmt::Debug for MonitorSession {
+    /// Reports the negotiated stream shape through the session's own
+    /// accessors. The boxed stream handle is a trait object.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("MonitorSession")
+            .field("sample_rate_hz", &self.sample_rate_hz())
+            .field("channels", &self.channels())
+            .field("input_latency_micros", &self.input_latency_micros())
+            .field("state", &self.state())
+            .finish_non_exhaustive()
+    }
+}
+
 impl MonitorSession {
     /// Open an input stream on `backend` whose callback converts each
     /// quantum to interleaved stereo and pushes it into `sink`. The stream

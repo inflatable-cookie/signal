@@ -88,6 +88,26 @@ pub struct LiveInputFeeder {
     pub(crate) inner: Arc<LiveInputInner>,
 }
 
+impl std::fmt::Debug for LiveInputFeeder {
+    /// Reports the shared ring's published counters. The ring itself is read
+    /// only through those counters, never by formatting its storage.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("LiveInputFeeder")
+            .field("ring_capacity", &self.inner.ring.capacity())
+            .field("buffered_samples", &self.inner.ring.len())
+            .field("overrun_samples", &self.inner.ring.overrun_samples())
+            .field(
+                "underrun_frames",
+                &self
+                    .inner
+                    .underrun_frames
+                    .load(std::sync::atomic::Ordering::Relaxed),
+            )
+            .finish_non_exhaustive()
+    }
+}
+
 impl LiveInputFeeder {
     /// Push interleaved stereo samples (`frames × 2` values). Returns the
     /// number of FRAMES written; the rest were dropped against a full ring.

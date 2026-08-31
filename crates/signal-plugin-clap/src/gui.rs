@@ -60,6 +60,7 @@ pub enum ClapGuiEvent {
 /// double-fires. Owned by [`crate::ClapHostedInstance`]; every method runs
 /// under the instance's lifecycle serialization and — per the CLAP spec —
 /// on the application MAIN THREAD.
+#[derive(Debug)]
 pub struct ClapGuiSession {
     plugin: *const clap_plugin,
     gui: *const clap_plugin_gui,

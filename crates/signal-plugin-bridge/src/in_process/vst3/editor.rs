@@ -12,6 +12,7 @@ use super::super::common::PluginGuiEvent;
 /// component/controller lifecycle needed for editor inspection, state capture,
 /// and state restoration without implying that the component can process
 /// audio.
+#[derive(Debug)]
 pub struct InProcessVst3Editor {
     instance: Mutex<Vst3HostedInstance>,
     alive: AtomicBool,

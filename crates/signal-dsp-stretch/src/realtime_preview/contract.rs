@@ -213,6 +213,22 @@ pub struct RealtimePreviewCallbackState {
     pub(crate) previous_energy: Vec<f64>,
 }
 
+impl std::fmt::Debug for RealtimePreviewCallbackState {
+    /// Reports configuration and ratio-scheduler progress. The FFT plans are
+    /// foreign trait objects and the remaining fields are preallocated
+    /// spectral working buffers.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("RealtimePreviewCallbackState")
+            .field("config", &self.config)
+            .field("current_ratio", &self.current_ratio)
+            .field("active_ratio", &self.active_ratio)
+            .field("ratio_change_count", &self.ratio_change_count)
+            .field("processed_frames", &self.processed_frames)
+            .finish_non_exhaustive()
+    }
+}
+
 /// Report returned by a successful RealtimePreview callback process call.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct RealtimePreviewCallbackProcessReport {

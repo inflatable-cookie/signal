@@ -14,6 +14,7 @@ use super::command::{RenderCommand, SharedState, TopologyStage};
 
 /// Control-side handle to a render plane: install plans, drive transport,
 /// and observe meters/health counters published by the executor.
+#[derive(Debug)]
 pub struct RenderPlaneController {
     commands: SyncSender<RenderCommand>,
     retired: Receiver<Box<RenderPlan>>,

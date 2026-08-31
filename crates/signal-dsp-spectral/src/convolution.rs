@@ -70,6 +70,22 @@ pub struct PartitionedConvolver {
     bypassed: bool,
 }
 
+impl std::fmt::Debug for PartitionedConvolver {
+    /// Reports the partitioning shape. The FFT plans are foreign trait
+    /// objects and the spectra, delay line, and scratch are large working
+    /// buffers, so neither is formatted.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("PartitionedConvolver")
+            .field("block_size", &self.block_size)
+            .field("fft_size", &self.fft_size)
+            .field("partitions", &self.partitions)
+            .field("ir_len", &self.ir_len)
+            .field("bypassed", &self.bypassed)
+            .finish_non_exhaustive()
+    }
+}
+
 impl PartitionedConvolver {
     /// Build a convolver for `impulse_response`, processing `block_size` samples
     /// per call. The FFT size is `2 × block_size`; the response is split into
@@ -264,6 +280,7 @@ impl PartitionedConvolver {
 ///     assert!((got - want).abs() < 1e-4);
 /// }
 /// ```
+#[derive(Debug)]
 pub struct StreamingConvolver {
     convolver: PartitionedConvolver,
     block_size: usize,

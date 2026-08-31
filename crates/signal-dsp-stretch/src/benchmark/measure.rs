@@ -160,6 +160,13 @@ const SEAM_MEASUREMENT_WINDOW_FRAMES: usize = 384;
 /// floor is the `p99.9` first-difference taken from frames outside every seam
 /// window — the render's own idea of a large step — and only the excess over it
 /// is reported.
+///
+/// # Panics
+///
+/// Panics if any first-difference step is not comparable, which requires a
+/// NaN in `interleaved_samples`. Renders reaching this measurement are
+/// finite by contract, so a panic here reports a corrupt render rather than
+/// an unsupported input.
 pub fn measure_dynamic_segment_seam_click(
     interleaved_samples: &[Sample],
     channels: u16,

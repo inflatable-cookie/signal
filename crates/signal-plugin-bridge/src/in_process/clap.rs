@@ -21,6 +21,7 @@ use super::common::{
 ///
 /// `start_processing` runs lazily on the first processed block, which is
 /// the audio thread — matching CLAP's threading contract.
+#[derive(Debug)]
 pub struct InProcessClapProcessor {
     /// Keeps the plugin instance (and its library) alive; lifecycle runs on
     /// drop. Field order matters: the session must drop before the

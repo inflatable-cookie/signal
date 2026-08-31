@@ -5,7 +5,7 @@ use super::*;
 /// Pass a clone to `SignalRuntime::subscribe` (via its `RuntimeEventSink`
 /// impl) and read back events with `snapshot()` or the typed helpers.  Used
 /// as the standard event sink in tests and diagnostic harnesses.
-#[derive(Clone, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct RuntimeEventRecorder {
     pub(super) events: Arc<Mutex<Vec<RuntimeEvent>>>,
 }

@@ -27,6 +27,7 @@ use super::types::{StretchQuality, REALTIME_PREVIEW_ANALYSIS_HOP, REALTIME_PREVI
 /// shorter STFT window than `OfflineHighQualityStretcher` so edits can be
 /// previewed with lower algorithmic latency, while keeping the same clean-room
 /// transient-reset and linked-stereo foundation.
+#[derive(Debug)]
 pub struct RealtimePreviewStretcher {
     ratio: f64,
     window_size: usize,

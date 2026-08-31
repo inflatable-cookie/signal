@@ -58,6 +58,12 @@ impl Drop for OfflineWaitingGuard {
 /// immediately, not through the audible ramp-out path — and then the edge
 /// envelope is snapped open before the first rendered block. Realtime
 /// behavior is untouched; the snap is a crate-private offline-only hook.
+///
+/// # Panics
+///
+/// Panics if the executor holds no plan after the install above succeeded.
+/// Spec, channel, and transport failures return [`RenderPlaneError`], so this
+/// is an install invariant rather than an input condition.
 pub fn render_plan_to_pcm(
     spec: &RenderPlanSpec,
     options: &OfflineRenderOptions,

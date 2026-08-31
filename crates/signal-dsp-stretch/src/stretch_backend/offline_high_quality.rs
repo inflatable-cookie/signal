@@ -28,6 +28,7 @@ use super::types::{
 /// resets. It is exposed as [`StretchQuality::OfflineHighQuality`] for
 /// export/cache/freeze artifact planning, while product-facing consumption is
 /// gated by accepted promotion evidence on each artifact plan.
+#[derive(Debug)]
 pub struct OfflineHighQualityStretcher {
     ratio: f64,
     window_size: usize,

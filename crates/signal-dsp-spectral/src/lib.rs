@@ -192,6 +192,19 @@ pub struct StreamingStft {
     frames_emitted: usize,
 }
 
+impl std::fmt::Debug for StreamingStft {
+    /// Reports configuration and progress. The FFT plan is a foreign trait
+    /// object and the window and pending input are working buffers.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("StreamingStft")
+            .field("config", &self.config)
+            .field("frames_emitted", &self.frames_emitted)
+            .field("pending_samples", &self.pending.len())
+            .finish_non_exhaustive()
+    }
+}
+
 impl StreamingStft {
     /// Create a chunked STFT analyzer with a precomputed Hann window.
     pub fn new(config: StftConfig) -> Self {
