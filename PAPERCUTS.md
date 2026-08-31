@@ -7,16 +7,19 @@ they hit a solvable hurdle; they do not stop the current task to fix one.
 
 <!-- Keep entries short. Append newest entries at the top. Do not include secrets. -->
 
-### [ ] SharedSandbox sequential prepare must stop before load — 2026-08-17
+## Closed
+
+### [x] SharedSandbox sequential prepare must stop before load — 2026-08-17
 - Friction: broker rejects `load-plugin-instance` while `already_processing`.
   Host factory stops the boundary, adds the member, then starts again.
 - Impact: sequential SharedSandbox prepares work; live add-while-processing
   stays out of v1 (design non-goal).
-- Possible fix: keep stop/start as host orchestration, or later add a
-  broker-side pause that is still not audio-thread member add.
+- Fix: host path already stop → load/activate → start
+  (`prepare_shared_sandbox_processor`). Added broker regression
+  `load_while_processing_rejects_until_boundary_stop` pinning the refusal
+  token and post-stop sequential add. Evidence:
+  `docs/logs/2026-08/31-papercuts-wave26-sharedsandbox-stop-before-load.md`.
 - Surface: `signal-host-local` factory, `signal-plugin-sandbox` broker
-
-## Closed
 
 ### [x] Cross-repo worker handoff paths need resolution — 2026-08-30
 - Friction: Soundcheck exposed the ready card, but the implementation handoff
