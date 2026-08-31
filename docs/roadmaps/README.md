@@ -1,7 +1,7 @@
 # Roadmaps
 
 Status: active (`g11`); `g10` stretch audit complete
-Updated: 2026-08-27
+Updated: 2026-08-31
 
 ## In plain words
 
@@ -25,6 +25,8 @@ Current state in one breath:
 - `g11.001` Batches 1.1–1.4 closed the host-assembly factory and offline
   host-edge proof. `g11.002` Batches 2.0–2.3 closed SharedSandbox: one
   broker child, many plugin instances, runtime-owned blast radius.
+- `g11.003` is the active bounded Northstar instruction and Rust quality audit;
+  it opens no product behavior or new generation.
 
 The rest of this page is the batch-by-batch history behind that summary. It is
 the working evidence spine for automation — read it if you need detail, not

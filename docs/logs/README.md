@@ -33,7 +33,8 @@ Use this section for:
 
 - strict-lane reference:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
-- current ready card: none
+- current ready card:
+  `docs/roadmaps/g11/batch-cards/008-g11-003-northstar-agents-rust-audit.md`
 - `g09` is complete; newer work should not treat the recent `g09` log chain as
   live execution state
 
@@ -141,6 +142,6 @@ Use this section for:
 
 ## Next Task
 
-Use this index as evidence history, not as live queue state. Re-enter planning
-through the roadmap and contract front doors before promoting another strict
-execution lane.
+Use this index as evidence history. Execute the bounded baseline-routed
+`g11.003` audit through card `008`; do not treat historical strict-lane logs as
+current authority or infer another card afterward.

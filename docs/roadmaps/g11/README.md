@@ -1,7 +1,7 @@
 # g11 Milestones
 
-Status: `g11.001` complete; `g11.002` complete
-Updated: 2026-08-27
+Status: `g11.001` complete; `g11.002` complete; `g11.003` active
+Updated: 2026-08-31
 
 ## At a glance
 
@@ -14,6 +14,8 @@ Updated: 2026-08-27
 - Second milestone: **`g11.002` SharedSandbox tier** — complete. Contract `014`
   owns semantics. v1 grouping is plugin type identity. Map:
   `docs/architecture/shared-sandbox-multiplexing.md`.
+- Maintenance milestone: **`g11.003` Northstar instruction and Rust quality
+  audit** — card `008` ready; no product behavior or new generation.
 
 ## Why this generation matters now
 
@@ -24,7 +26,8 @@ Updated: 2026-08-27
 
 1. **`g11.001`** — production host-assembly wiring (complete)
 2. **`g11.002`** — SharedSandbox tier (complete)
-3. **Backlog pulls** — graph successor, device depth, analysis breadth only when
+3. **`g11.003`** — Northstar instruction and Rust quality audit (active)
+4. **Backlog pulls** — graph successor, device depth, analysis breadth only when
    Loophole or another consumer names the dependency
 
 Do not reopen stretch, Automatic, or RealtimePreview adoption work from this
@@ -36,6 +39,8 @@ generation.
   - production host-assembly wiring; Batches 1.1–1.4 closed
 - `g11.002` `complete`
   - SharedSandbox tier. Batches 2.0–2.3 closed.
+- `g11.003` `active`
+  - repository-scope AGENTS and Rust audit; Batch 3.1 / card `008` ready
 
 ## Working Rule
 
@@ -49,8 +54,6 @@ generation.
 
 ## Next Task
 
-Stop for operator selection of the next Signal-only backlog pull. Do not start
-a follow-on generation. `g11.001` and `g11.002` are complete. The next `g11`
-item is a product-pulled backlog pull, not an implied `g12`. Linux CLAP
-filesystem discovery (`086`) shipped 2026-08-21 (Soundcheck card 136 / Signal
-PR #6).
+Execute card `008` for the bounded `g11.003` maintenance audit. Stop at its PR
+for orchestrator exact-head review. Do not open `g12` or infer a product backlog
+pull from this lane.

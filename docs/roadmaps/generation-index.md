@@ -8,8 +8,9 @@ Updated: 2026-08-17
 - `g10` is the closing generation. Its stretch audit is complete. Integration
   work opens in `g11`.
 - `g11` is the active generation. Its front door is
-  `docs/roadmaps/g11/README.md`. `g11.001` production host-assembly wiring is
-  complete. `g11.002` SharedSandbox is complete.
+  `docs/roadmaps/g11/README.md`. `g11.001` production host-assembly wiring and
+  `g11.002` SharedSandbox are complete. `g11.003` is the active bounded
+  instruction and Rust quality audit maintenance lane.
 
 Historical `g10` stretch-lane narrative:
 
@@ -203,7 +204,7 @@ Historical `g10` stretch-lane narrative:
 | `g07` | 2026-03-13 | Seed the post-`g06` feature-expansion queue around routing or multichannel depth, Linux-native breadth, control-surface substrate, and fuller time-stretch capability | Closed on 2026-03-19 after multichannel or spatial execution, LV2 and Linux backends, external MIDI/control surfaces, sample-domain stretch, integrated acceptance, and generation-closeout promotion work landed |
 | `g08` | 2026-03-19 | Continue beyond bounded feature-expansion closure with live Linux backend ownership, richer plugin or device protocol depth, immersive routing, and workflow-adjacent runtime services | Closed on 2026-03-22 after live Linux ownership, LV2 or plugin protocol depth, immersive render breadth, device-protocol substrate, preview workflows, grouped acceptance lanes, integrated acceptance, and final generation-closeout work landed |
 | `g10` | 2026-06-11 | Turn the 2026-06-11 deep audit into a remediation program: fix the real audio path, demolish simulated/narration mass (~70-80k LoC), consolidate hygiene, defer rebuilds to demand | Stretch audit complete; generation closeout in progress; integration work moves to `g11` |
-| `g11` | 2026-08-17 | Post-stretch integration generation: production host-assembly wiring and SharedSandbox tier | Active generation; `g11.001` complete; `g11.002` complete |
+| `g11` | 2026-08-17 | Post-stretch integration generation: production host-assembly wiring and SharedSandbox tier | Active generation; `g11.001` and `g11.002` complete; `g11.003` instruction and Rust quality audit active |
 | `g09` | 2026-04-08 | Turn the audit findings into a contract-backed realization, hardening, and interactive-proof program | Closed on 2026-04-11 after plugin and backend realization, production-readiness gating, and operator-visible demo proof landed |
 
 ## Rollover policy

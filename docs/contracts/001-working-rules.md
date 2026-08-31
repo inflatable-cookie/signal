@@ -33,7 +33,8 @@ on roadmap prose and ad hoc thread memory.
   with `g09.015`.
 - `g10` ran mostly baseline-routed; the stretch audit completed without an
   active strict-execution milestone.
-- There is currently no active strict-execution milestone.
+- There is currently no active strict-execution milestone. `g11.003` is a
+  baseline-routed explicit audit maintenance lane, not a reopened strict spec.
 - Closed generations and unrelated active work should not be backfilled just to
   make the stricter surface look symmetrical.
 
@@ -113,7 +114,8 @@ If those closeout conditions are not satisfied, repair the current generation in
 
 ## Next Task
 
-Signal is baseline-routed with `g11.001` and `g11.002` complete. No current
-ready card. Stop for operator selection of the next Signal-only backlog pull.
-Do not start a follow-on generation. Reopen this contract when the next
-generation installs a new strict lane.
+Signal is baseline-routed with `g11.001` and `g11.002` complete. Execute the
+bounded `g11.003` instruction and Rust quality audit through card `008`, then
+stop at its PR for orchestrator review. Do not start a follow-on generation or
+infer a product backlog pull. Reopen this contract when a future generation
+installs a new strict lane.
