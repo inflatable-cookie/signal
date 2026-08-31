@@ -11,12 +11,12 @@
 //! recovery paths exercised by the kept host tests.
 
 use signal_hardware::{
-    AudioDeviceDescriptor, BackendHealth, BackendPolicyTier, HardwareBackendIdentity,
-    HardwareClockSource, HardwareClockTopology, HardwareDiagnosticEvent, HardwareDiagnosticKind,
-    HardwareDiagnosticSeverity, HardwareDiagnosticsSnapshot, HardwareLatencyProfile,
-    HardwareLifecycleContract, HardwareLifecycleOwnership, HardwareNegotiationError,
-    HardwareNegotiationErrorKind, HardwareRestartPolicy, HardwareStreamConfig,
-    HardwareStreamRequest, SampleRate,
+    AudioDeviceDescriptor, BackendHealth, BackendPolicyRecord, BackendPolicyTier, HardwareBackend,
+    HardwareBackendIdentity, HardwareClockSource, HardwareClockTopology, HardwareDiagnosticEvent,
+    HardwareDiagnosticKind, HardwareDiagnosticSeverity, HardwareDiagnosticsSnapshot,
+    HardwareLatencyProfile, HardwareLifecycleContract, HardwareLifecycleOwnership,
+    HardwareNegotiationError, HardwareNegotiationErrorKind, HardwareRestartPolicy,
+    HardwareStreamConfig, HardwareStreamRequest, SampleRate,
 };
 use signal_hardware_cpal::enumerate_output_devices;
 
@@ -40,24 +40,32 @@ impl Default for LocalHardwareBackend {
     }
 }
 
-impl LocalHardwareBackend {
-    pub(crate) fn backend_identity(&self) -> HardwareBackendIdentity {
+impl HardwareBackend for LocalHardwareBackend {
+    fn backend_identity(&self) -> HardwareBackendIdentity {
         HardwareBackendIdentity::CoreAudio
     }
 
-    pub(crate) fn backend_name(&self) -> &'static str {
+    fn backend_name(&self) -> &'static str {
         "coreaudio"
     }
 
-    pub(crate) fn policy_tier(&self) -> BackendPolicyTier {
-        self.policy_tier
+    fn policy_record(&self) -> BackendPolicyRecord {
+        BackendPolicyRecord {
+            backend_identity: HardwareBackendIdentity::CoreAudio,
+            tier: self.policy_tier,
+            in_host_default: true,
+        }
     }
 
-    pub(crate) fn diagnostics(&self) -> HardwareDiagnosticsSnapshot {
-        self.diagnostics.clone()
+    fn health(&self) -> BackendHealth {
+        self.diagnostics.health
     }
 
-    pub(crate) fn default_output_device(&self) -> Option<AudioDeviceDescriptor> {
+    fn enumerate_devices(&self) -> Vec<AudioDeviceDescriptor> {
+        self.devices.clone()
+    }
+
+    fn default_output_device(&self) -> Option<AudioDeviceDescriptor> {
         self.devices
             .iter()
             .find(|device| device.default_output)
@@ -68,23 +76,6 @@ impl LocalHardwareBackend {
                     .find(|device| device.max_output_channels > 0)
                     .cloned()
             })
-    }
-
-    /// Negotiate and return a stream config for the default output device.
-    pub(crate) fn default_output_stream(
-        &self,
-        sample_rate: u32,
-        buffer_size: usize,
-    ) -> Result<HardwareStreamConfig, HardwareNegotiationError> {
-        let device = self.default_output_device().ok_or_else(|| {
-            HardwareNegotiationError::new(
-                HardwareNegotiationErrorKind::DeviceUnavailable,
-                "no default output device is currently available",
-            )
-        })?;
-        let request =
-            HardwareStreamRequest::new_output(device.device_id.clone(), sample_rate, buffer_size);
-        self.negotiate_stream(&request)
     }
 
     fn negotiate_stream(
@@ -146,6 +137,10 @@ impl LocalHardwareBackend {
             latency: HardwareLatencyProfile::output_only(request.buffer_size as u32),
             simulated: false,
         })
+    }
+
+    fn diagnostics(&self) -> HardwareDiagnosticsSnapshot {
+        self.diagnostics.clone()
     }
 }
 

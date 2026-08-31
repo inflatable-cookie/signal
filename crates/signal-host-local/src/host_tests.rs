@@ -16,6 +16,31 @@ fn booted_host() -> (LocalRuntimeHost, LocalRuntimeHostSummary) {
 }
 
 #[test]
+fn boot_default_with_injected_simulated_hardware_reports_simulated_stream() {
+    let _env_lock = demo_plugin_env_lock();
+    let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
+    let backend = signal_hardware::SimulatedHardwareBackend::default_stereo_output(
+        signal_hardware::HardwareBackendIdentity::Unsupported,
+        "simulated",
+        "simulated:default-output",
+        "Simulated Default Output",
+    );
+    let mut host = LocalRuntimeHost::with_hardware(runtime, Box::new(backend));
+    let summary = host
+        .boot_default()
+        .expect("injected simulated hardware should boot headlessly");
+    assert_eq!(summary.backend_name, "simulated");
+    assert_eq!(summary.hardware.device_id, "simulated:default-output");
+    assert_eq!(summary.hardware.device_name, "Simulated Default Output");
+    assert!(summary.hardware.simulated);
+    assert_eq!(
+        summary.audio_pump.stream_state,
+        LocalAudioStreamState::Running
+    );
+    assert!(summary.topology.node_count > 0);
+}
+
+#[test]
 fn boot_default_reports_running_stream_and_topology() {
     let (host, summary) = booted_host();
     assert_eq!(

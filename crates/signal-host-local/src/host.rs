@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashMap};
 
-use signal_hardware::HardwareStreamConfig;
+use signal_hardware::{HardwareBackend, HardwareStreamConfig};
 use signal_plugin::PluginFormat;
 use signal_plugin_au::AuHostAdapter;
 use signal_plugin_clap::ClapPluginHostAdapter;
@@ -54,7 +54,7 @@ pub(crate) use host_support::{LOCAL_DEMO_GRAPH_ID, LOCAL_DEMO_PLUGIN_NODE_ID};
 /// render-plane processor from a previously scanned type.
 pub struct LocalRuntimeHost {
     runtime: SignalRuntime,
-    hardware: LocalHardwareBackend,
+    hardware: Box<dyn HardwareBackend>,
     clap: ClapPluginHostAdapter,
     au: AuHostAdapter,
     vst3: Vst3HostAdapter,
@@ -75,10 +75,25 @@ pub struct LocalRuntimeHost {
 impl LocalRuntimeHost {
     /// Construct a new local host wrapping the given runtime.
     ///
-    /// Initialises the hardware backend and the plugin format discovery
-    /// adapters (CLAP, AU, VST3, LV2). The runtime is subscribed to an internal
-    /// event recorder immediately.
+    /// Initialises the real local/cpal hardware backend and the plugin format
+    /// discovery adapters (CLAP, AU, VST3, LV2). The runtime is subscribed to
+    /// an internal event recorder immediately.
+    ///
+    /// For headless or test boot without enumerating cpal devices, use
+    /// [`Self::with_hardware`] with an explicit [`HardwareBackend`] such as
+    /// [`signal_hardware::SimulatedHardwareBackend`].
     pub fn new(runtime: SignalRuntime) -> Self {
+        Self::with_hardware(runtime, Box::new(LocalHardwareBackend::default()))
+    }
+
+    /// Construct a local host with an explicitly injected hardware backend.
+    ///
+    /// Production desktop callers should prefer [`Self::new`], which keeps the
+    /// real local/cpal path. Tests and headless consumers pass a
+    /// [`signal_hardware::SimulatedHardwareBackend`] (or any other
+    /// [`HardwareBackend`]) so `boot_default` does not require a machine
+    /// default output device.
+    pub fn with_hardware(runtime: SignalRuntime, hardware: Box<dyn HardwareBackend>) -> Self {
         let events = RuntimeEventRecorder::default();
         let mut runtime = runtime;
         runtime.subscribe(Box::new(events.clone()));
@@ -86,7 +101,7 @@ impl LocalRuntimeHost {
 
         Self {
             runtime,
-            hardware: LocalHardwareBackend::default(),
+            hardware,
             clap: ClapPluginHostAdapter::default(),
             au: AuHostAdapter::default(),
             vst3: Vst3HostAdapter::default(),
