@@ -1,4 +1,7 @@
-use signal_hardware::{HardwareConfigRequest, HardwareNegotiationError, HardwareStreamConfig};
+use signal_hardware::{
+    HardwareConfigRequest, HardwareNegotiationError, HardwareNegotiationErrorKind,
+    HardwareStreamConfig, HardwareStreamRequest,
+};
 use signal_runtime::{
     BackendPolicyOverride, RuntimeError, RuntimeProjectionApi, RuntimeSupervisorApi,
 };
@@ -9,15 +12,22 @@ impl LocalRuntimeHost {
     pub(crate) fn prepare_default_output_hardware(
         &mut self,
     ) -> Result<HardwareStreamConfig, RuntimeError> {
+        let sample_rate = self.runtime.config().sample_rate.0;
+        let buffer_size = self.runtime.config().graph.block_size;
+        let device = self.hardware.default_output_device().ok_or_else(|| {
+            Self::runtime_error_from_hardware_negotiation(HardwareNegotiationError::new(
+                HardwareNegotiationErrorKind::DeviceUnavailable,
+                "no default output device is currently available",
+            ))
+        })?;
+        let request =
+            HardwareStreamRequest::new_output(device.device_id.clone(), sample_rate, buffer_size);
         let stream = self
             .hardware
-            .default_output_stream(
-                self.runtime.config().sample_rate.0,
-                self.runtime.config().graph.block_size,
-            )
+            .negotiate_stream(&request)
             .map_err(Self::runtime_error_from_hardware_negotiation)?;
         let hardware_request =
-            HardwareConfigRequest::from_stream(&stream, self.hardware.policy_tier());
+            HardwareConfigRequest::from_stream(&stream, self.hardware.policy_record().tier);
         self.runtime.apply_hardware_config(hardware_request)?;
         self.runtime
             .set_active_output_device(stream.device.device_id.clone());
