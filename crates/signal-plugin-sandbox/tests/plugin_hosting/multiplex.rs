@@ -127,6 +127,84 @@ fn two_instances_of_the_same_type_process_through_one_child() {
 }
 
 #[test]
+fn load_while_processing_rejects_until_boundary_stop() {
+    let _slot = sandbox_child_slot();
+    if !rustc_available() {
+        eprintln!("skipping: rustc unavailable for the CLAP fixture");
+        return;
+    }
+    let directory = unique_fixture_dir();
+    let library = compile_clap_fixture(
+        &directory.path,
+        FIXTURE_PLUGIN_ID,
+        "Signal Sandbox Hosting Fixture",
+        0,
+    )
+    .expect("fixture should compile");
+    let library_path = library.display().to_string();
+
+    let mut client = SandboxBrokerClientSession::spawn_command(
+        env!("CARGO_BIN_EXE_signal-plugin-sandbox"),
+        &[],
+        &SandboxBrokerSpawnConfig::default(),
+    )
+    .expect("broker child should spawn");
+    client
+        .read_startup_receipts()
+        .expect("startup receipts should arrive");
+
+    client
+        .load_plugin_instance("member-a", &library_path, FIXTURE_PLUGIN_ID)
+        .expect("first instance should load");
+    let _lease_a = require_activated(
+        client
+            .activate_plugin_instance("member-a", SAMPLE_RATE_HZ, 1, MAX_FRAMES)
+            .expect("activate member-a"),
+    );
+    client
+        .start_processing()
+        .expect("child audio thread should start");
+
+    let refused = client
+        .load_plugin_instance("member-b", &library_path, FIXTURE_PLUGIN_ID)
+        .expect_err("load while processing must fail");
+    assert!(
+        format!("{refused:?}").contains("already_processing"),
+        "typed token expected: {refused:?}",
+    );
+
+    client
+        .stop_processing()
+        .expect("stop-processing unlocks lifecycle mutation");
+    client
+        .load_plugin_instance("member-b", &library_path, FIXTURE_PLUGIN_ID)
+        .expect("second instance should load after stop");
+    let _lease_b = require_activated(
+        client
+            .activate_plugin_instance("member-b", SAMPLE_RATE_HZ, 1, MAX_FRAMES)
+            .expect("activate member-b"),
+    );
+    client
+        .start_processing()
+        .expect("boundary may start again after sequential add");
+    assert!(client.is_alive(), "shared child should still be alive");
+    client.stop_processing().expect("stop-processing");
+    client
+        .deactivate_plugin_instance("member-a")
+        .expect("deactivate member-a");
+    client
+        .deactivate_plugin_instance("member-b")
+        .expect("deactivate member-b");
+    client
+        .unload_plugin_instance("member-a")
+        .expect("unload member-a");
+    client
+        .unload_plugin_instance("member-b")
+        .expect("unload member-b");
+    client.shutdown().expect("shutdown");
+}
+
+#[test]
 fn default_slot_rejects_a_second_load_plugin() {
     let _slot = sandbox_child_slot();
     if !rustc_available() {
