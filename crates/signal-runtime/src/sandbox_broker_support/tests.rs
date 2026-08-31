@@ -2,7 +2,8 @@
 
 use super::types::{
     parse_broker_receipt_line, parse_parameter_inventory, split_broker_args,
-    user_closed_editor_instance, SandboxBrokerReceiptState,
+    user_closed_editor_instance, SandboxBrokerClientSession, SandboxBrokerReceiptState,
+    SandboxBrokerSpawnConfig,
 };
 
 #[test]
@@ -143,4 +144,24 @@ fn parses_broker_receipt_lines() {
         Some("region:plugin-sandbox-broker")
     );
     assert_eq!(receipt.detail, "lease_attached");
+}
+
+/// Spawns a long-lived stand-in child (`cat` waits on the piped stdin) and
+/// proves [`SandboxBrokerClientSession::child_pid`] is a direct read of the
+/// owned [`std::process::Child`] identity — no `ps` or platform probe.
+#[cfg(unix)]
+#[test]
+fn child_pid_reports_owned_child_id() {
+    let mut session = SandboxBrokerClientSession::spawn_command(
+        "cat",
+        &[],
+        &SandboxBrokerSpawnConfig {
+            read_timeout_ms: Some(1_000),
+            ..SandboxBrokerSpawnConfig::default()
+        },
+    )
+    .expect("spawn stand-in broker child");
+    assert_eq!(session.child_pid(), session.child.id());
+    assert!(session.child_pid() > 0);
+    session.kill();
 }

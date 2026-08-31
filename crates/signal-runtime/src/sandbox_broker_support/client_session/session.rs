@@ -115,6 +115,15 @@ impl SandboxBrokerClientSession {
         self.mark_failed();
     }
 
+    /// OS process id of the spawned broker child.
+    ///
+    /// Same value as [`std::process::Child::id`] on the owned child. Hosts
+    /// use this for crash evidence and `sandbox_pid` reporting without an
+    /// external process probe.
+    pub fn child_pid(&self) -> u32 {
+        self.child.id()
+    }
+
     /// Whether the child broker process is still alive. `false` after the
     /// session failed (timeout/torn pipe kills the child) or the child
     /// exited on its own — the crash-isolation signal callers key bypass on.
