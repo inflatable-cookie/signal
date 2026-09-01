@@ -1,5 +1,9 @@
 //! Sandbox broker support unit tests.
 
+use std::sync::{Mutex, MutexGuard, OnceLock};
+
+use crate::RuntimeErrorKind;
+
 use super::types::{
     parse_broker_receipt_line, parse_parameter_inventory, split_broker_args,
     user_closed_editor_instance, SandboxBrokerClientSession, SandboxBrokerReceiptState,
@@ -147,6 +151,52 @@ fn parses_broker_receipt_lines() {
 }
 
 /// Spawns a long-lived stand-in child (`cat` waits on the piped stdin) and
+#[test]
+fn spawn_from_env_reports_actionable_missing_command() {
+    let _guard = broker_command_env_lock();
+    let previous = std::env::var_os("SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND");
+    unsafe {
+        std::env::remove_var("SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND");
+    }
+
+    let error = SandboxBrokerClientSession::spawn_from_env(&SandboxBrokerSpawnConfig::default())
+        .expect_err("spawn_from_env must fail without a prebuilt broker command");
+
+    assert_eq!(error.kind, RuntimeErrorKind::ResourceUnavailable);
+    assert!(
+        error
+            .message
+            .contains("missing SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND"),
+        "message should name the required env var, got {}",
+        error.message
+    );
+    assert!(
+        error.message.contains("prebuilt"),
+        "message should require a prebuilt executable, got {}",
+        error.message
+    );
+    assert!(
+        error.message.contains("consuming-signal.md")
+            && error.message.contains("broker:provision"),
+        "message should point at the runbook and provisioner, got {}",
+        error.message
+    );
+
+    unsafe {
+        match previous {
+            Some(value) => std::env::set_var("SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND", value),
+            None => std::env::remove_var("SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND"),
+        }
+    }
+}
+
+fn broker_command_env_lock() -> MutexGuard<'static, ()> {
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
 /// proves [`SandboxBrokerClientSession::child_pid`] is a direct read of the
 /// owned [`std::process::Child`] identity — no `ps` or platform probe.
 #[cfg(unix)]

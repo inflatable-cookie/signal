@@ -128,6 +128,54 @@ the one that proves the release.
 
 `keepsake` is C++ and has no Signal dependency.
 
+## Sandbox broker prebuilt contract
+
+Stable Cargo does not give a dependent package access to another package's
+binary. `signal-plugin-sandbox` is therefore **not** consumable as a normal
+Cargo dependency for its executable. Depending on that package alone does not
+build or path the broker.
+
+The supported consumer boundary is a compatible **prebuilt** broker executable
+supplied before startup:
+
+| Variable | Role |
+| --- | --- |
+| `SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND` | Absolute path to the broker executable (required to enable the broker path) |
+| `SIGNAL_PLUGIN_SANDBOX_BROKER_ARGS` | Optional arguments (shell-style quoting) |
+| `SIGNAL_PLUGIN_SANDBOX_BROKER_WORKDIR` | Optional child working directory |
+| `SIGNAL_PLUGIN_SANDBOX_BROKER_READ_TIMEOUT_MS` | Optional receipt read timeout |
+
+Rules:
+
+- Set `SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND` to a real executable before the
+  consumer process starts. Missing configuration fails fast with an actionable
+  diagnostic from `signal-runtime` (`SandboxBrokerClientSession::spawn_from_env`).
+- Consumer startup must **not** invoke Cargo or build Signal source to obtain
+  the broker. An on-demand `cargo build` / `cargo run` inside the first test or
+  product boot is out of contract.
+- Provisioning may build or retrieve the broker in an **explicit** prior step.
+  In this repository: `effigy broker:provision` (or
+  `bash scripts/provision-sandbox-broker.sh`) prints a host-local absolute path
+  suitable for the env var. Optional inputs:
+  `SIGNAL_BROKER_TARGET_DIR`, `SIGNAL_BROKER_PROFILE` (`debug` or `release`).
+- The provisioned binary is for the current host and profile. Do not treat one
+  machine's artifact as portable across OS or architecture.
+
+Example:
+
+```sh
+export SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND="$(effigy broker:provision)"
+# then start the consumer / test process that spawns the broker
+```
+
+Focused Signal proof of this boundary: `effigy broker:prove-prebuilt-contract`.
+
+Decision record: `docs/triage/2026-09-01-sandbox-broker-prebuilt-contract.md`.
+Earlier Cargo-dependency diagnosis:
+`docs/logs/2026-08/31-papercuts-wave29-sandbox-broker-consumer-diagnosis.md`.
+
 ## Next Task
 
-None. Update the table above when a consumer's dependency set changes.
+None. Update the consumer table when a dependency set changes; revisit broker
+distribution only if Signal later chooses release-shipped assets or stable
+Cargo artifact dependencies.
