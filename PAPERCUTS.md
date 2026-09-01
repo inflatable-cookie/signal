@@ -9,6 +9,19 @@ they hit a solvable hurdle; they do not stop the current task to fix one.
 
 ## Closed
 
+### [x] LocalRuntimeHost erased HardwareBackend broke TransportDriver: Send — 2026-09-01
+- Friction: PR 17 stored `Box<dyn HardwareBackend>` on `LocalRuntimeHost`;
+  Loophole `LiveHost` could no longer implement `TransportDriver: Send`.
+- Resolution: host injection boundary is `Box<dyn HardwareBackend + Send>`;
+  shared `HardwareBackend` trait unchanged. Built-in
+  `LocalHardwareBackend` and `SimulatedHardwareBackend` own ordinary data
+  and satisfy the bound without unsafe.
+- Evidence: `docs/logs/2026-09/01-papercuts-wave41-local-host-send-boundary.md`;
+  Signal Send compile proofs; downstream `cargo check -p pulse-signal-link`
+  against this worktree (Loophole paths and lockfile restored after evidence).
+- Surface: `signal-host-local` host field/`with_hardware`; Loophole
+  `pulse-signal-link` LiveHost
+
 ### [x] Rust audit `collect` fabricates `unrun` records on a partial second call — 2026-09-01
 - Friction: a partial later collection synthesized audit-wide `unrun` records
   that contradicted sealed passing evidence.

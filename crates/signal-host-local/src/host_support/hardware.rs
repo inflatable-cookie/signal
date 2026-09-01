@@ -252,7 +252,14 @@ fn normalize_device_id(name: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::normalize_device_id;
+    use super::{normalize_device_id, LocalHardwareBackend};
+
+    fn assert_send<T: Send>() {}
+
+    #[test]
+    fn local_hardware_backend_is_send() {
+        assert_send::<LocalHardwareBackend>();
+    }
 
     #[test]
     fn normalizes_device_names_into_stable_ids() {

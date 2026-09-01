@@ -54,7 +54,7 @@ pub(crate) use host_support::{LOCAL_DEMO_GRAPH_ID, LOCAL_DEMO_PLUGIN_NODE_ID};
 /// render-plane processor from a previously scanned type.
 pub struct LocalRuntimeHost {
     runtime: SignalRuntime,
-    hardware: Box<dyn HardwareBackend>,
+    hardware: Box<dyn HardwareBackend + Send>,
     clap: ClapPluginHostAdapter,
     au: AuHostAdapter,
     vst3: Vst3HostAdapter,
@@ -101,8 +101,8 @@ impl LocalRuntimeHost {
     /// an internal event recorder immediately.
     ///
     /// For headless or test boot without enumerating cpal devices, use
-    /// [`Self::with_hardware`] with an explicit [`HardwareBackend`] such as
-    /// [`signal_hardware::SimulatedHardwareBackend`].
+    /// [`Self::with_hardware`] with an explicit [`HardwareBackend`] + [`Send`]
+    /// backend such as [`signal_hardware::SimulatedHardwareBackend`].
     pub fn new(runtime: SignalRuntime) -> Self {
         Self::with_hardware(runtime, Box::new(LocalHardwareBackend::default()))
     }
@@ -112,9 +112,17 @@ impl LocalRuntimeHost {
     /// Production desktop callers should prefer [`Self::new`], which keeps the
     /// real local/cpal path. Tests and headless consumers pass a
     /// [`signal_hardware::SimulatedHardwareBackend`] (or any other
-    /// [`HardwareBackend`]) so `boot_default` does not require a machine
-    /// default output device.
-    pub fn with_hardware(runtime: SignalRuntime, hardware: Box<dyn HardwareBackend>) -> Self {
+    /// [`HardwareBackend`] + [`Send`] implementor) so `boot_default` does not
+    /// require a machine default output device.
+    ///
+    /// The erased backend is `Send` so the host remains movable across the
+    /// existing consumer `TransportDriver: Send` boundary. Built-in backends
+    /// (`LocalHardwareBackend`, [`signal_hardware::SimulatedHardwareBackend`])
+    /// own only ordinary data and satisfy that bound without unsafe assertions.
+    pub fn with_hardware(
+        runtime: SignalRuntime,
+        hardware: Box<dyn HardwareBackend + Send>,
+    ) -> Self {
         let events = RuntimeEventRecorder::default();
         let mut runtime = runtime;
         runtime.subscribe(Box::new(events.clone()));
