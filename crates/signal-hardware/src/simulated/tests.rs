@@ -6,6 +6,13 @@ use crate::{
 };
 use signal_primitives::SampleRate;
 
+fn assert_send<T: Send>() {}
+
+#[test]
+fn simulated_hardware_backend_is_send() {
+    assert_send::<SimulatedHardwareBackend>();
+}
+
 #[test]
 fn simulated_backend_negotiates_default_output_stream_and_runtime_request() {
     let backend = SimulatedHardwareBackend::default_stereo_output(

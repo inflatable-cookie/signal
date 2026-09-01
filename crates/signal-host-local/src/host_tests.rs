@@ -3,6 +3,18 @@ use super::*;
 use signal_plugin::PluginIsolationTier;
 use signal_runtime::{RuntimeConfig, RuntimeErrorKind};
 
+fn assert_send<T: Send>() {}
+
+#[test]
+fn local_runtime_host_is_send() {
+    // Consumer TransportDriver: Send (Loophole LiveHost) requires the erased
+    // hardware backend boundary to stay Send. Prefer a compile failure here
+    // over a comment-only claim.
+    assert_send::<LocalRuntimeHost>();
+    assert_send::<Box<dyn HardwareBackend + Send>>();
+    assert_send::<signal_hardware::SimulatedHardwareBackend>();
+}
+
 fn booted_host() -> (LocalRuntimeHost, LocalRuntimeHostSummary) {
     // Held across the boot. `SIGNAL_HOST_DEMO_PLUGIN_*` is process-global, and
     // one test in this module installs an override while the rest boot without
