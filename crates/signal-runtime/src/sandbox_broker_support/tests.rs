@@ -176,8 +176,7 @@ fn spawn_from_env_reports_actionable_missing_command() {
         error.message
     );
     assert!(
-        error.message.contains("consuming-signal.md")
-            && error.message.contains("broker:provision"),
+        error.message.contains("consuming-signal.md") && error.message.contains("broker:provision"),
         "message should point at the runbook and provisioner, got {}",
         error.message
     );
