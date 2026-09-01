@@ -1,6 +1,7 @@
 # g11 Milestones
 
-Status: `g11.001` complete; `g11.002` complete; `g11.003` complete (PR open)
+Status: `g11.001` complete; `g11.002` complete; `g11.003` complete (PR in
+review, one review wave applied)
 Updated: 2026-09-01
 
 ## At a glance
@@ -58,5 +59,5 @@ generation.
 
 ## Next Task
 
-Stop for orchestrator exact-head review of card `008`'s PR. Do not open `g12` or
-infer a product backlog pull from this lane.
+Stop for orchestrator re-review of card `008`'s new exact head. Do not open
+`g12` or infer a product backlog pull from this lane.

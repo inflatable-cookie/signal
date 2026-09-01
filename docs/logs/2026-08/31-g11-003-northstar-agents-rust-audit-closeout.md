@@ -1,7 +1,8 @@
 # g11.003 Northstar AGENTS And Rust Audit Closeout
 
-Status: complete; PR open for orchestrator review
+Status: complete; one review wave applied after orchestrator review
 Date: 2026-08-31
+Updated: 2026-09-01
 Owner: core-product
 Card: `docs/roadmaps/g11/batch-cards/008-g11-003-northstar-agents-rust-audit.md`
 Milestone: `docs/roadmaps/g11/003-northstar-instruction-and-rust-quality-audit.md`
@@ -41,6 +42,16 @@ public operations whose invariant was not visible.
 
 Records live in this worktree's Git metadata under
 `.git/worktrees/northstar-agents-rust-audit/northstar/rust-quality/audits/signal-g11-003-repository-audit/`.
+
+These hashes seal the **first wave only**. The review wave below changed one
+file that the sealed result already lists among its 81, so for
+`crates/signal-plugin-au/src/au_host_adapter/hosting/process.rs` the recorder's
+`plugin-formats` evidence describes the first-wave content, not the current
+head. The sealed result was not regenerated, rewritten, or re-finalized, and
+`result.json` still hashes to
+`bf7dc353a760a2dead465150e2fbb20b9c30c4aaa32df6cf5c6dd7236f84f706`. The
+recorder's changed-file set is unchanged; only that one file's content moved
+past it.
 
 ### Units
 
@@ -91,7 +102,8 @@ rings — `SpscRing`, `MidiEventRing`, `PluginParamChangeQueue` — where derivi
 would format storage owned by the other side of an SPSC discipline. Every manual
 impl reports identity and shape through published atomics or safe accessors and
 uses `finish_non_exhaustive`; none takes a lock, and none reads a slot outside
-its synchronisation. No other common trait was added: these are sessions,
+its synchronisation. One of the 20 was wrong off macOS and was corrected in the
+review wave below. No other common trait was added: these are sessions,
 engines, plans, and rings whose equality, ordering, hashing, and default values
 would be misleading.
 
@@ -215,8 +227,57 @@ Per-unit recorder evidence: 85 immutable records over `compiler`, `lint`,
 1 warning. Enforced `cargo clippy --all-targets --all-features -- -D warnings`
 is warning-free for every unit.
 
+All of that evidence is **host-local on macOS at the default target**. It
+therefore proved nothing about the non-macOS shape of a `cfg`-split public type,
+which is exactly the gap Linux CI found — see the review wave below.
+
 Formatting was applied only to files an authorized repair had already changed,
 never to a whole crate or the worktree.
+
+## Review Wave — Linux CI Falsified One First-Wave Repair
+
+Orchestrator review of exact head `ddba8e4960be13c1e209ab7ab7629daae10b3c56`
+requested changes. The required **Build plugin crates (Linux)** job failed with
+three `E0609` errors at
+`crates/signal-plugin-au/src/au_host_adapter/hosting/process.rs:98-100`.
+
+The first-wave `RUST-API-001` repair gave `AuProcessSession` a manual `Debug`
+that formats `self.unit`, `self.output_left`, and `self.sample_time`. All six of
+that struct's other fields are `#[cfg(target_os = "macos")]`; off macOS the
+public type is only `processing`. The audit's `plugin-formats` compiler and lint
+evidence ran on macOS at the default target, so it compiled the only shape in
+which that implementation was valid. The finding and its repair authority were
+sound; the implementation was not portable, and the audit's own evidence plan
+could not have caught it.
+
+Repair: the macOS-only fields are now guarded in the formatter exactly as they
+are declared, and `processing` is rendered on every target.
+
+Verified before pushing:
+
+- **Reproduction.** Reverting to the first-wave implementation and running
+  `cargo check -p signal-plugin-au --target wasm32-unknown-unknown` reproduces
+  the same three `E0609` errors at lines 98-100 that Linux CI reported.
+  `wasm32-unknown-unknown` was already installed and takes the same
+  `not(target_os = "macos")` branch, so no toolchain was changed to get this.
+- **Correction.** The same command on the corrected file exits 0.
+- **No new warnings.** That target reports 7 warnings on the corrected file and
+  the identical 7 on `main`, so the review wave adds none.
+- **Whole-class check.** All 27 manual `Debug` implementations in the repository
+  (24 from this audit, 3 pre-existing) were re-scanned for reads of a
+  `cfg`-gated field. `AuProcessSession` was the only one. Derived implementations
+  are not at risk, because `derive` follows the field's own `cfg`.
+- **macOS proof retained.** `cargo clippy -p signal-plugin-clap -p
+  signal-plugin-au -p signal-plugin-lv2 -p signal-plugin-vst3 --all-targets
+  --all-features -- -D warnings` is warning-free, `cargo test -p
+  signal-plugin-au --all-features` passes 19 tests across 5 binaries, and
+  `effigy qa`, `effigy qa:docs`, `effigy qa:northstar`, `cargo fmt --all --
+  --check`, and `git diff --check` all pass.
+- **Authoritative proof** is the required Linux job on the new exact head.
+
+This is a review-wave change outside the finalized recorder. It was not fed
+back through `assess`/`complete`/`finalize`, no sealed record was edited, and no
+hash in this closeout was recomputed to accommodate it.
 
 ## Retained Limitations
 
@@ -262,6 +323,12 @@ never to a whole crate or the worktree.
   459 code lines) and 6 attention-marker warnings, all of which are `// Note:`
   prose matched as `[NOTE]` deferred-work markers. Threshold-led splitting is out
   of scope for this card, and the markers are false positives.
+- **Recorder evidence is single-platform.** Every `compiler` and `lint` record
+  was collected on macOS at the default target. For crates with a `cfg` split —
+  `signal-plugin-au`, `signal-hardware-coremidi`, and the macOS-gated paths in
+  `signal-plugin-vst3` and `signal-plugin-clap` — the sealed evidence covers one
+  shape only. Linux CI is the cross-platform gate, and it is what caught the
+  `AuProcessSession` defect above.
 - **No Chorus checkout is present.** No IPC contract question arose that
   Signal's own contracts could not settle, so nothing was blocked on it.
 - **Superseded audit records.** Three earlier audit IDs exist in Git metadata and

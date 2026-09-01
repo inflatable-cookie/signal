@@ -1,6 +1,6 @@
 # 008 - g11.003 Northstar AGENTS And Rust Audit
 
-Status: complete (PR open for orchestrator review)
+Status: complete; one review wave applied, awaiting orchestrator re-review
 Owner: core-product
 Created: 2026-08-31
 Updated: 2026-09-01
@@ -112,6 +112,14 @@ returned 0 detector candidates over 826 files with a control-verified scanner;
 exit 0. Full result, hashes, and retained limitations:
 `docs/logs/2026-08/31-g11-003-northstar-agents-rust-audit-closeout.md`.
 
+One review wave followed. Linux CI falsified the first-wave `AuProcessSession`
+`Debug` repair: the audit's `plugin-formats` evidence was host-local on macOS and
+never compiled that `cfg`-split public type's non-macOS shape. The corrected file
+is a review-wave change **outside** the finalized recorder hashes; the sealed
+result was not regenerated. Detail and cross-platform proof are in the closeout's
+review-wave section.
+
 ## Next Task
 
-Stop for orchestrator exact-head review of the PR. Do not start another card.
+Stop for orchestrator re-review of the PR's new exact head. Do not start another
+card.

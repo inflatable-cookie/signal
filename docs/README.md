@@ -145,6 +145,6 @@ jump straight to the layer that matches your question.
 
 ## Next Task
 
-Stop for orchestrator exact-head review of card `008`'s PR
+Stop for orchestrator re-review of card `008`'s new exact head
 (`docs/roadmaps/g11/batch-cards/008-g11-003-northstar-agents-rust-audit.md`).
 Do not open `g12` or infer a product backlog pull from this maintenance lane.
