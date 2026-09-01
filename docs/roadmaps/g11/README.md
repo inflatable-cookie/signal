@@ -1,7 +1,7 @@
 # g11 Milestones
 
-Status: `g11.001` complete; `g11.002` complete; `g11.003` complete (PR in
-review, one review wave applied)
+Status: `g11.001` complete; `g11.002` complete; `g11.003` complete and merged
+through PR `#18` after one review wave
 Updated: 2026-09-01
 
 ## At a glance
@@ -16,8 +16,8 @@ Updated: 2026-09-01
   owns semantics. v1 grouping is plugin type identity. Map:
   `docs/architecture/shared-sandbox-multiplexing.md`.
 - Maintenance milestone: **`g11.003` Northstar instruction and Rust quality
-  audit** — card `008` complete, PR open for orchestrator review; no product
-  behavior or new generation.
+  audit** — card `008` complete and merged through PR `#18`; no product behavior
+  or new generation.
 
 ## Why this generation matters now
 
@@ -28,8 +28,8 @@ Updated: 2026-09-01
 
 1. **`g11.001`** — production host-assembly wiring (complete)
 2. **`g11.002`** — SharedSandbox tier (complete)
-3. **`g11.003`** — Northstar instruction and Rust quality audit (complete; PR
-   open for orchestrator review)
+3. **`g11.003`** — Northstar instruction and Rust quality audit (complete and
+   merged through PR `#18`)
 4. **Backlog pulls** — graph successor, device depth, analysis breadth only when
    Loophole or another consumer names the dependency
 
@@ -59,5 +59,5 @@ generation.
 
 ## Next Task
 
-Stop for orchestrator re-review of card `008`'s new exact head. Do not open
-`g12` or infer a product backlog pull from this lane.
+Return to operator planning or backlog selection. `g11` has no ready card; do
+not open `g12` or infer a product backlog pull from this lane.

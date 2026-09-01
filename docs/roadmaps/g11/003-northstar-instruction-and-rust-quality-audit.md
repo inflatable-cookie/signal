@@ -1,6 +1,6 @@
 # 003 - Northstar Instruction And Rust Quality Audit
 
-Status: complete; one review wave applied, awaiting orchestrator re-review
+Status: complete; merged through PR `#18` after one review wave
 Owner: core-product
 Created: 2026-08-31
 Updated: 2026-09-01
@@ -131,5 +131,5 @@ evaluation-only lint that grants no repair authority).
 
 ## Next Task
 
-Stop for orchestrator re-review of card `008`'s new exact head. Do not infer
-another product or maintenance batch.
+Return to operator planning or backlog selection. There is no ready card; do
+not infer another product or maintenance batch.

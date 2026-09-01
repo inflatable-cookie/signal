@@ -29,7 +29,7 @@ Pick the path that matches what you're doing:
   find the contract that owns your seam in the [contract index](./contracts/contract-index.md),
   and check the [active generation roadmap](./roadmaps/g11/README.md) before
   starting anything. `g11.003`, the bounded instruction and Rust quality audit,
-  is complete and awaiting orchestrator review; there is no ready card.
+  is merged and complete; there is no ready card.
 - **I need the current status in one paragraph.** Each section README below
   opens with a short "in plain words" summary. The
   [roadmaps README](./roadmaps/README.md) is the single best status snapshot.
@@ -145,6 +145,5 @@ jump straight to the layer that matches your question.
 
 ## Next Task
 
-Stop for orchestrator re-review of card `008`'s new exact head
-(`docs/roadmaps/g11/batch-cards/008-g11-003-northstar-agents-rust-audit.md`).
-Do not open `g12` or infer a product backlog pull from this maintenance lane.
+Return to operator planning or backlog selection. `g11` has no ready card; do
+not open `g12` or infer a product backlog pull from this maintenance lane.

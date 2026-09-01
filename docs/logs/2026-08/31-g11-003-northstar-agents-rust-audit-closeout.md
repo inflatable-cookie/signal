@@ -1,6 +1,6 @@
 # g11.003 Northstar AGENTS And Rust Audit Closeout
 
-Status: complete; one review wave applied after orchestrator review
+Status: complete; merged through PR `#18` after one review wave
 Date: 2026-08-31
 Updated: 2026-09-01
 Owner: core-product
@@ -354,7 +354,7 @@ repairs.
 
 ## Next Task
 
-Stop for orchestrator exact-head review of the PR. Do not start another card.
+Return to operator planning or backlog selection. Do not start another card.
 The two candidates this audit surfaced but did not open are the unsafe-hardening
 lane (214 undocumented blocks, operator decision) and the `missing_errors_doc`
 documentation backlog (222 sites); neither is authorized here.

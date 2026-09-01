@@ -1,6 +1,6 @@
 # 008 - g11.003 Northstar AGENTS And Rust Audit
 
-Status: complete; one review wave applied, awaiting orchestrator re-review
+Status: complete; merged through PR `#18` after one review wave
 Owner: core-product
 Created: 2026-08-31
 Updated: 2026-09-01
@@ -121,5 +121,5 @@ review-wave section.
 
 ## Next Task
 
-Stop for orchestrator re-review of the PR's new exact head. Do not start another
-card.
+Return to operator planning or backlog selection. There is no ready card; do
+not start another card without new authority.

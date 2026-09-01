@@ -114,8 +114,7 @@ If those closeout conditions are not satisfied, repair the current generation in
 
 ## Next Task
 
-Signal is baseline-routed with `g11.001` and `g11.002` complete. Execute the
-bounded `g11.003` instruction and Rust quality audit through card `008`, then
-stop at its PR for orchestrator review. Do not start a follow-on generation or
-infer a product backlog pull. Reopen this contract when a future generation
-installs a new strict lane.
+Signal is baseline-routed with `g11.001` through `g11.003` complete. Return to
+operator planning or backlog selection; there is no ready card. Do not start a
+follow-on generation or infer a product backlog pull. Reopen this contract when
+a future generation installs a new strict lane.

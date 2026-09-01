@@ -24,10 +24,9 @@ Use this folder for ready execution cards under the active `g11` generation.
 - `005-g11-002-broker-multiplexing.md` — `complete`
 - `006-g11-002-host-assembly-integration.md` — `complete`
 - `007-g11-002-continuity-proof-and-closeout.md` — `complete`
-- `008-g11-003-northstar-agents-rust-audit.md` — `ready`
+- `008-g11-003-northstar-agents-rust-audit.md` — `complete`
 
 ## Next Task
 
-Execute `008-g11-003-northstar-agents-rust-audit.md` in its dedicated worker
-lane. Stop at the PR for orchestrator review; do not open `g12` or infer a
-product backlog pull.
+Return to operator planning or backlog selection. There is no ready card; do
+not open `g12` or infer a product backlog pull.

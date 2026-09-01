@@ -144,5 +144,5 @@ Use this section for:
 ## Next Task
 
 Use this index as evidence history. The bounded baseline-routed `g11.003` audit
-closed through card `008` and is awaiting orchestrator review; do not treat
-historical strict-lane logs as current authority or infer another card.
+closed through card `008` and merged through PR `#18`; do not treat historical
+strict-lane logs as current authority or infer another card.
