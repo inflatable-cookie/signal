@@ -108,6 +108,13 @@ impl RealtimePreviewCallbackState {
 
     /// Current callback contract. This intentionally remains unsupported for
     /// direct audio-thread processing until streaming DSP lands.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the stored configuration no longer plans successfully. The
+    /// callback state is only constructed from a config that already planned,
+    /// so this is a construction invariant and not reachable from caller
+    /// input.
     pub fn contract(&self) -> RealtimePreviewStreamingContract {
         plan_realtime_preview_stream(self.config)
             .expect("callback state stores a validated RealtimePreview config")

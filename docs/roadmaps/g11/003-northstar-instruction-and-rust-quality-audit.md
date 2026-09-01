@@ -1,9 +1,9 @@
 # 003 - Northstar Instruction And Rust Quality Audit
 
-Status: active
+Status: complete; one review wave applied, awaiting orchestrator re-review
 Owner: core-product
 Created: 2026-08-31
-Updated: 2026-08-31
+Updated: 2026-09-01
 Depends on: g11.002
 Vision tags: `QUALITY`, `MAINTAINABILITY`, `REALTIME`
 Governing refs: `AGENTS.md`, `docs/contracts/001-working-rules.md`, `docs/contracts/rust-quality-profile.json`, `docs/contracts/rust-quality-deviations.json`, `docs/architecture/system-architecture.md`, `docs/architecture/product-guardrails.md`
@@ -42,7 +42,7 @@ architecture rewrite.
 
 ### Batch 3.1 - AGENTS And Rust Repository Audit
 
-Status: ready
+Status: complete
 
 - review the full instruction reader journey and exact Claude bridge
 - initialize the Rust audit recorder before source mutation
@@ -106,7 +106,30 @@ section map, and clean final diff.
 - a missing external contract prevents an honest assessment
 - validation changes the plan or exposes work outside this maintenance lane
 
+## Result
+
+Card `008` ran as one worker lane. Audit `signal-g11-003-repository-audit`
+covered all 28 crates in 14 units at status `degraded`: 89 recorder-authorized
+repairs applied (28 `RUST-MSRV-001`, 47 `RUST-API-001`, 14 `RUST-ERR-001`) and 8
+`RUST-UNSAFE-001` findings left report-only. `AGENTS.md` kept all eight sections
+and every boundary; `CLAUDE.md` is unchanged. Required local validation all
+exits 0.
+Evidence: `docs/logs/2026-08/31-g11-003-northstar-agents-rust-audit-closeout.md`.
+
+One review wave followed orchestrator review. Linux CI falsified the first-wave
+`AuProcessSession` `Debug` repair, because the recorder's `plugin-formats`
+evidence was collected host-local on macOS and never compiled that `cfg`-split
+public type's non-macOS shape. The corrected file is a review-wave change outside
+the finalized recorder hashes; the sealed result stands unmodified. This is the
+milestone's own acceptance criterion working — validation exposed a defect and
+the limitation is now recorded rather than papered over.
+
+Two follow-ups were surfaced and deliberately not opened: the unsafe-hardening
+lane (214 undocumented unsafe blocks, an operator decision under this rule's
+report-only authority) and the `missing_errors_doc` backlog (222 sites, an
+evaluation-only lint that grants no repair authority).
+
 ## Next Task
 
-Execute card `008` in the dedicated worker lane. Stop after its PR is ready for
-orchestrator review; do not infer another product or maintenance batch.
+Stop for orchestrator re-review of card `008`'s new exact head. Do not infer
+another product or maintenance batch.

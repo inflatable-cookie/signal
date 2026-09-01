@@ -26,6 +26,7 @@ use super::budget::{
 /// owning host service marks the handle dead ([`Self::mark_dead`]) when the
 /// child process dies, so subsequent blocks bypass immediately without
 /// burning their wait budget.
+#[derive(Debug)]
 pub struct ShmPluginProcessor {
     /// Keeps the mapping alive for the view's lifetime. Never read directly.
     _region: MappedSharedMemoryRegion,

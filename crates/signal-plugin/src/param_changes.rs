@@ -48,6 +48,21 @@ pub struct PluginParamChangeQueue {
     tail: AtomicUsize,
 }
 
+impl std::fmt::Debug for PluginParamChangeQueue {
+    /// Reports capacity and the published cursors only. The slots are
+    /// deliberately not formatted: a slot's parameter id and value are two
+    /// separate atomics that are only consistent for the consumer between the
+    /// cursors, so formatting them would report a torn pair.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("PluginParamChangeQueue")
+            .field("capacity", &self.slots.len())
+            .field("head", &self.head.load(Ordering::Acquire))
+            .field("tail", &self.tail.load(Ordering::Acquire))
+            .finish_non_exhaustive()
+    }
+}
+
 impl Default for PluginParamChangeQueue {
     fn default() -> Self {
         Self::new()

@@ -14,6 +14,7 @@ use super::command::{RenderCommand, SharedState};
 
 /// Audio-thread executor: drains the command mailbox between blocks and
 /// runs [`RenderPlaneExecutor::render_block`] with a hard no-alloc contract.
+#[derive(Debug)]
 pub struct RenderPlaneExecutor {
     pub(crate) commands: Receiver<RenderCommand>,
     pub(crate) retired: SyncSender<Box<RenderPlan>>,

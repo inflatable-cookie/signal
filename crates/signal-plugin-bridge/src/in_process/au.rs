@@ -24,6 +24,7 @@ use super::common::{
 /// The load path takes the same (path, key) pair as the other backends;
 /// for AU the path identifies the discovered bundle when available and the
 /// key is the fourcc triple resolved through the system registry.
+#[derive(Debug)]
 pub struct InProcessAuProcessor {
     /// Field order matters: the session must drop before the instance (the
     /// session's drop uninstalls the render callback from the live unit).

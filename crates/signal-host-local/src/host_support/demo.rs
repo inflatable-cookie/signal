@@ -104,6 +104,7 @@ pub(crate) fn local_demo_runtime_assembly() -> LocalDemoRuntimeAssembly {
 }
 
 /// RAII guard that installs a demo plugin environment override and removes it on drop.
+#[derive(Debug)]
 pub struct DemoBootstrapGuard {
     root: Option<PathBuf>,
     old_demo_format: Option<OsString>,

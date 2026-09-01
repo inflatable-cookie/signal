@@ -72,6 +72,27 @@ pub struct LocalRuntimeHost {
     events: RuntimeEventRecorder,
 }
 
+impl std::fmt::Debug for LocalRuntimeHost {
+    /// Reports discovery and session counts plus the live stream state. The
+    /// boxed hardware backend is a trait object and the runtime carries its
+    /// own observation surface, so neither is formatted here.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("LocalRuntimeHost")
+            .field("discovered_clap_types", &self.discovered_clap_types.len())
+            .field("discovered_au_types", &self.discovered_au_types.len())
+            .field("discovered_vst3_types", &self.discovered_vst3_types.len())
+            .field("discovered_lv2_types", &self.discovered_lv2_types.len())
+            .field("active_sandbox_specs", &self.active_sandbox_specs.len())
+            .field(
+                "sandbox_broker_sessions",
+                &self.sandbox_broker_sessions.len(),
+            )
+            .field("active_output_stream", &self.active_output_stream)
+            .finish_non_exhaustive()
+    }
+}
+
 impl LocalRuntimeHost {
     /// Construct a new local host wrapping the given runtime.
     ///

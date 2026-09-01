@@ -7,6 +7,19 @@ they hit a solvable hurdle; they do not stop the current task to fix one.
 
 <!-- Keep entries short. Append newest entries at the top. Do not include secrets. -->
 
+### [ ] Rust audit `collect` fabricates `unrun` records on a partial second call — 2026-09-01
+- Friction: evidence records are immutable, so a second `collect` for one unit
+  must omit already-recorded requests. The tool then treats those classes as
+  unrepresented in that call and writes `unrun-<class>-<unit>` for **every**
+  unit in the audit — 42 false "evidence unrun" limitations that contradict the
+  passing records already on disk.
+- Impact: the finalized report misrepresents validation state. There is no way
+  to remove the fabricated records, so the whole audit has to be restarted.
+- Fix: collect each unit exactly once, with every applicable class represented
+  in that single plan. If a class genuinely cannot run, send it as an explicit
+  `unrun`/`unavailable` request in the same call rather than omitting it.
+- Surface: installed Northstar `rust-quality` `collect`; `g11.003` audit lane
+
 ## Closed
 
 ### [x] SharedSandbox sequential prepare must stop before load — 2026-08-17

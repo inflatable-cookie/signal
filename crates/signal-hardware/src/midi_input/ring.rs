@@ -29,6 +29,21 @@ unsafe impl Sync for MidiEventRing {}
 // SAFETY: see above; moving the ring moves plain data.
 unsafe impl Send for MidiEventRing {}
 
+impl std::fmt::Debug for MidiEventRing {
+    /// Reports shape and counters only. The storage is deliberately not
+    /// formatted: reading a slot outside the SPSC discipline would race the
+    /// other side, and `capacity`, `len`, and `overrun_events` already read
+    /// through the published atomics.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("MidiEventRing")
+            .field("capacity", &self.capacity())
+            .field("len", &self.len())
+            .field("overrun_events", &self.overrun_events())
+            .finish_non_exhaustive()
+    }
+}
+
 impl MidiEventRing {
     /// Build a ring holding at least `min_capacity` events (rounded up to a
     /// power of two).

@@ -33,8 +33,9 @@ Use this section for:
 
 - strict-lane reference:
   `docs/specs/001-g09-lane-first-strict-adoption.md`
-- current ready card:
-  `docs/roadmaps/g11/batch-cards/008-g11-003-northstar-agents-rust-audit.md`
+- most recent closeout:
+  `docs/logs/2026-08/31-g11-003-northstar-agents-rust-audit-closeout.md`
+  (card `008`; no ready card follows it)
 - `g09` is complete; newer work should not treat the recent `g09` log chain as
   live execution state
 
@@ -142,6 +143,6 @@ Use this section for:
 
 ## Next Task
 
-Use this index as evidence history. Execute the bounded baseline-routed
-`g11.003` audit through card `008`; do not treat historical strict-lane logs as
-current authority or infer another card afterward.
+Use this index as evidence history. The bounded baseline-routed `g11.003` audit
+closed through card `008` and is awaiting orchestrator review; do not treat
+historical strict-lane logs as current authority or infer another card.

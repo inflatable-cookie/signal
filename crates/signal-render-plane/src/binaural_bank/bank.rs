@@ -17,6 +17,25 @@ pub struct BinauralVoiceBank {
     pub(crate) unsupported_events: AtomicU64,
 }
 
+impl std::fmt::Debug for BinauralVoiceBank {
+    /// Reports bank shape and the unsupported-event counter. The voice state
+    /// is behind a mutex that the render path holds per block, so `fmt` does
+    /// not take it.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("BinauralVoiceBank")
+            .field("sounds", &self.sounds.len())
+            .field("hrirs", &self.hrirs.len())
+            .field(
+                "unsupported_events",
+                &self
+                    .unsupported_events
+                    .load(std::sync::atomic::Ordering::Relaxed),
+            )
+            .finish_non_exhaustive()
+    }
+}
+
 impl BinauralVoiceBank {
     /// Build a bank with `max_voices` slots over preloaded `sounds` and an
     /// HRIR table. `crossfade_samples` is the per-slot response-swap window

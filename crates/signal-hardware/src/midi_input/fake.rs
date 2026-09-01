@@ -36,6 +36,17 @@ pub struct FakeMidiInputBackend {
     state: Mutex<FakeMidiState>,
 }
 
+impl std::fmt::Debug for FakeMidiInputBackend {
+    /// Reports the type only. Every field lives behind the shared-state
+    /// mutex, and taking that lock inside `fmt` would let a diagnostic
+    /// formatting call deadlock against a caller that already holds it.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("FakeMidiInputBackend")
+            .finish_non_exhaustive()
+    }
+}
+
 impl FakeMidiInputBackend {
     /// Construct a fake backend with no ports; add them with
     /// [`FakeMidiInputBackend::add_port`].
@@ -54,6 +65,11 @@ impl FakeMidiInputBackend {
     }
 
     /// Add (or re-add, for device-return tests) a port to the inventory.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the shared-state mutex is poisoned by an earlier panic while
+    /// it was held.
     pub fn add_port(&self, port: MidiPortDescription) {
         let mut state = self.state.lock().expect("fake midi state");
         state
@@ -64,6 +80,11 @@ impl FakeMidiInputBackend {
 
     /// Remove a port from the inventory and flip its live subscriptions to
     /// [`MidiSubscriptionState::PortLost`] — the scripted unplug.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the shared-state mutex is poisoned by an earlier panic while
+    /// it was held.
     pub fn remove_port(&self, port_id: &str) {
         let mut state = self.state.lock().expect("fake midi state");
         state.ports.retain(|port| port.port_id != port_id);
@@ -79,6 +100,11 @@ impl FakeMidiInputBackend {
     }
 
     /// Script the event tape delivered when `port_id` is next subscribed.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the shared-state mutex is poisoned by an earlier panic while
+    /// it was held.
     pub fn set_tape(&self, port_id: &str, tape: Vec<MidiInputEvent>) {
         self.state
             .lock()
@@ -89,6 +115,11 @@ impl FakeMidiInputBackend {
 
     /// Number of subscriptions currently held open (RAII proof: drops
     /// decrement this).
+    ///
+    /// # Panics
+    ///
+    /// Panics if the shared-state mutex is poisoned by an earlier panic while
+    /// it was held.
     pub fn active_subscription_count(&self) -> usize {
         let mut state = self.state.lock().expect("fake midi state");
         state

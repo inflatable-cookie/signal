@@ -30,6 +30,7 @@ pub(crate) const STDERR_TAIL_LINES: usize = 16;
 /// broker can never deadlock on a full stderr pipe. A timed-out or torn
 /// session is marked failed and its child process is killed; subsequent
 /// commands fail fast.
+#[derive(Debug)]
 pub struct SandboxBrokerClientSession {
     pub(crate) child: Child,
     pub(crate) stdin: ChildStdin,
@@ -60,6 +61,7 @@ pub struct SandboxBrokerSpawnConfig {
 }
 
 /// Combines the live broker client session with the attached session record.
+#[derive(Debug)]
 pub struct SandboxBrokerSession {
     /// Live child-process client session.
     pub client: SandboxBrokerClientSession,

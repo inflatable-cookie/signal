@@ -16,6 +16,7 @@ use super::types::{StretchQuality, DEFAULT_ANALYSIS_HOP, DEFAULT_WINDOW_SIZE};
 /// window-power overlap-add normalization. Inputs shorter than one analysis
 /// window fall back to linear time-domain interpolation (the honest cheap
 /// path — a single window carries no phase-propagation benefit).
+#[derive(Debug)]
 pub struct PhaseVocoderStretcher {
     ratio: f64,
     window_size: usize,

@@ -59,6 +59,26 @@ pub struct Vst3HostedInstance {
     pub(crate) _module: LoadedVst3Module,
 }
 
+impl std::fmt::Debug for Vst3HostedInstance {
+    /// Reports COM identity and lifecycle state. The controller handles,
+    /// component handler, ARA session, and loaded module are VST3 ABI objects
+    /// with a mandated release ordering and are not formatted.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("Vst3HostedInstance")
+            .field("component", &self.component)
+            .field("processor", &self.processor)
+            .field("has_controller", &self.controller.is_some())
+            .field("state", &self.state)
+            .field("parameters", &self.parameters.len())
+            .field("activated_sample_rate_hz", &self.activated_sample_rate_hz)
+            .field("activated_max_frames", &self.activated_max_frames)
+            .field("gui_open", &self.gui_session.is_some())
+            .field("midi_cc_mapping_available", &self.midi_cc_params.is_some())
+            .finish_non_exhaustive()
+    }
+}
+
 impl Drop for Vst3HostedInstance {
     fn drop(&mut self) {
         // View teardown (removed + release) must precede controller

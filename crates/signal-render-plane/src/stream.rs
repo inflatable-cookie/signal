@@ -225,6 +225,33 @@ pub struct StreamFeeder {
     pub(crate) inner: Arc<StreamInner>,
 }
 
+impl std::fmt::Debug for StreamFeeder {
+    /// Reports the shared source's identity and published counters. The chunk
+    /// mailboxes are bounded queues shared with the audio thread and are not
+    /// formatted.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("StreamFeeder")
+            .field("source_sample_rate_hz", &self.inner.source_sample_rate_hz)
+            .field("total_frames", &self.inner.total_frames)
+            .field(
+                "wanted_frame",
+                &self
+                    .inner
+                    .wanted_frame
+                    .load(std::sync::atomic::Ordering::Relaxed),
+            )
+            .field(
+                "underrun_frames",
+                &self
+                    .inner
+                    .underrun_frames
+                    .load(std::sync::atomic::Ordering::Relaxed),
+            )
+            .finish_non_exhaustive()
+    }
+}
+
 impl StreamFeeder {
     /// Next source frame the executor needs, as last published. Feed chunks
     /// covering `[wanted, wanted + read-ahead)`.

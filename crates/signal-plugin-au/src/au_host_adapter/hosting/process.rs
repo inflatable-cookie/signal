@@ -89,6 +89,25 @@ pub struct AuProcessSession {
     processing: bool,
 }
 
+impl std::fmt::Debug for AuProcessSession {
+    /// Reports the hosted unit and render shape on macOS. Every other field of
+    /// this type is `cfg(target_os = "macos")` — off macOS the struct is just
+    /// `processing` — so the hosted fields are guarded the same way they are
+    /// declared. The render input state and buffer list are FFI scratch handed
+    /// to `AudioUnitRender`.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut view = formatter.debug_struct("AuProcessSession");
+        #[cfg(target_os = "macos")]
+        {
+            view.field("unit", &self.unit)
+                .field("max_frames", &self.output_left.len())
+                .field("sample_time", &self.sample_time);
+        }
+        view.field("processing", &self.processing)
+            .finish_non_exhaustive()
+    }
+}
+
 // Safety: the session is handed to exactly one audio thread;
 // `AudioUnitRender` is the AU render-thread entry point, the boxed input
 // stash is only touched by the unit's synchronous mid-render pull on that

@@ -105,6 +105,12 @@ pub const SIGNAL_STRETCH_BACKEND_PLAN: [StretchBackendPlan; 3] = [
 ];
 
 /// Returns the Signal-owned plan for `tier`.
+///
+/// # Panics
+///
+/// Panics if `SIGNAL_STRETCH_BACKEND_PLAN` has no entry for `tier`. The table
+/// is expected to carry every [`StretchBackendTier`] variant, so a panic here
+/// means a variant was added without its plan.
 pub fn stretch_backend_plan(tier: StretchBackendTier) -> StretchBackendPlan {
     SIGNAL_STRETCH_BACKEND_PLAN
         .iter()

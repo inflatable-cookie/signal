@@ -3,6 +3,7 @@ use super::*;
 /// Host-scoped supervisor report: [`RuntimeHostObservationReport`] plus the
 /// accumulated event stream.  Extends [`RuntimeSupervisorReport`] with hardware
 /// I/O context; built via `RuntimeHostSupervisorReport::new()`.
+#[derive(Debug)]
 pub struct RuntimeHostSupervisorReport {
     /// The combined observation and host I/O data for this cycle.
     pub observation: RuntimeHostObservationReport,

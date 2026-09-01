@@ -78,6 +78,23 @@ pub struct ClapHostedInstance {
     param_out: Arc<PluginParamChangeQueue>,
 }
 
+impl std::fmt::Debug for ClapHostedInstance {
+    /// Reports plugin identity and lifecycle state. The host shim, entry, and
+    /// gui extension are raw CLAP ABI objects and are not formatted.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("ClapHostedInstance")
+            .field("plugin", &self.plugin)
+            .field("state", &self.state)
+            .field("parameters", &self.parameters.len())
+            .field("activated_sample_rate_hz", &self.activated_sample_rate_hz)
+            .field("activated_max_frames", &self.activated_max_frames)
+            .field("gui_api_supported", &self.gui_api_supported)
+            .field("gui_open", &self.gui_session.is_some())
+            .finish_non_exhaustive()
+    }
+}
+
 impl ClapHostedInstance {
     /// Load `library_path`, create the plugin with `plugin_id` through the
     /// factory, and run its `init`. Enumerates the parameter inventory and

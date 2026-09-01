@@ -10,7 +10,9 @@ or downstream product workflow.
 ## Non-negotiable boundaries
 
 - Preserve realtime safety on audio-thread paths: no allocation, blocking,
-  locks, or unbounded work.
+  locks, or unbounded work. Those paths are the `signal-render-plane`
+  executor, the `signal-hardware` capture/output callbacks, and the DSP
+  kernels they call — not `signal-runtime`, which allocates by design.
 - Treat plugin code as untrusted. Keep plugin and hardware glue at the edge;
   keep reusable signal processing inside the owning crates.
 - Keep IPC and message contracts aligned with Chorus specs. Do not change an
@@ -47,21 +49,15 @@ or downstream product workflow.
 
 ## Route work by job
 
-Use Effigy when it covers the operation:
+The Effigy Agent Contract at the end of this file covers routing itself —
+`graph`, `tasks`, `doctor`, `test --plan`, and `--json`. Signal adds:
 
-- `effigy graph explore "<question>" --json` for code ownership, flow, or
-  impact;
-- `effigy tasks` when the selector inventory is needed;
-- `effigy doctor` only when routing or repository health is uncertain;
-- `effigy test --plan` when test execution shape matters;
-- `effigy <selector>` for supported work, `effigy validate` for the normal
-  build/format/compile-validation surface, and `effigy qa` for full local QA.
-
-Use `effigy qa:docs` and `effigy qa:northstar` after docs or planning changes.
-Use `effigy --json <command>` when another tool consumes the result. Fall back
-to raw Cargo only when the needed operation is not in `effigy.toml`; do not add
-package scripts that merely re-export Effigy or a current-directory repo
-override.
+- `effigy validate` is the normal build/format/compile-validation surface and
+  `effigy qa` is full local QA;
+- run `effigy qa:docs` and `effigy qa:northstar` after docs or planning
+  changes;
+- fall back to raw Cargo only when the operation is not in `effigy.toml`, and
+  never add a package script that merely re-exports Effigy.
 
 Signal has no target-local `check:agent-instructions` task. AGENTS review
 uses the installed Northstar consumer-safe audit:
@@ -88,7 +84,9 @@ repo override on the instruction surface.
   operating details.
 
 When changing IPC, consult the sibling Chorus guardrails at
-`../chorus/specs/guidelines/agents-operating-guardrails.md` when available.
+`../chorus/specs/guidelines/agents-operating-guardrails.md`. That checkout is
+often absent here; if it is, and Signal's own contracts do not settle the
+question, record the limitation and stop rather than inferring the contract.
 Nested `AGENTS.md` files, contracts, and skills add path-specific rules.
 
 ## Completion

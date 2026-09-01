@@ -28,8 +28,8 @@ Pick the path that matches what you're doing:
 - **I'm working on Signal.** Read the [Architecture section](./architecture/README.md),
   find the contract that owns your seam in the [contract index](./contracts/contract-index.md),
   and check the [active generation roadmap](./roadmaps/g11/README.md) before
-  starting anything. Its current ready work is the bounded `g11.003`
-  instruction and Rust quality audit, not a product backlog pull.
+  starting anything. `g11.003`, the bounded instruction and Rust quality audit,
+  is complete and awaiting orchestrator review; there is no ready card.
 - **I need the current status in one paragraph.** Each section README below
   opens with a short "in plain words" summary. The
   [roadmaps README](./roadmaps/README.md) is the single best status snapshot.
@@ -145,6 +145,6 @@ jump straight to the layer that matches your question.
 
 ## Next Task
 
-Execute `docs/roadmaps/g11/batch-cards/008-g11-003-northstar-agents-rust-audit.md`
-in its dedicated worker lane. Stop at its PR for orchestrator exact-head review.
+Stop for orchestrator re-review of card `008`'s new exact head
+(`docs/roadmaps/g11/batch-cards/008-g11-003-northstar-agents-rust-audit.md`).
 Do not open `g12` or infer a product backlog pull from this maintenance lane.

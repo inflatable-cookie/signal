@@ -1,7 +1,8 @@
 # g11 Milestones
 
-Status: `g11.001` complete; `g11.002` complete; `g11.003` active
-Updated: 2026-08-31
+Status: `g11.001` complete; `g11.002` complete; `g11.003` complete (PR in
+review, one review wave applied)
+Updated: 2026-09-01
 
 ## At a glance
 
@@ -15,7 +16,8 @@ Updated: 2026-08-31
   owns semantics. v1 grouping is plugin type identity. Map:
   `docs/architecture/shared-sandbox-multiplexing.md`.
 - Maintenance milestone: **`g11.003` Northstar instruction and Rust quality
-  audit** — card `008` ready; no product behavior or new generation.
+  audit** — card `008` complete, PR open for orchestrator review; no product
+  behavior or new generation.
 
 ## Why this generation matters now
 
@@ -26,7 +28,8 @@ Updated: 2026-08-31
 
 1. **`g11.001`** — production host-assembly wiring (complete)
 2. **`g11.002`** — SharedSandbox tier (complete)
-3. **`g11.003`** — Northstar instruction and Rust quality audit (active)
+3. **`g11.003`** — Northstar instruction and Rust quality audit (complete; PR
+   open for orchestrator review)
 4. **Backlog pulls** — graph successor, device depth, analysis breadth only when
    Loophole or another consumer names the dependency
 
@@ -39,8 +42,10 @@ generation.
   - production host-assembly wiring; Batches 1.1–1.4 closed
 - `g11.002` `complete`
   - SharedSandbox tier. Batches 2.0–2.3 closed.
-- `g11.003` `active`
-  - repository-scope AGENTS and Rust audit; Batch 3.1 / card `008` ready
+- `g11.003` `complete`
+  - repository-scope AGENTS and Rust audit; Batch 3.1 / card `008` closed.
+    Audit `signal-g11-003-repository-audit`, 14 units over 28 crates, 89
+    recorder-authorized repairs, 8 unsafe findings left report-only.
 
 ## Working Rule
 
@@ -54,6 +59,5 @@ generation.
 
 ## Next Task
 
-Execute card `008` for the bounded `g11.003` maintenance audit. Stop at its PR
-for orchestrator exact-head review. Do not open `g12` or infer a product backlog
-pull from this lane.
+Stop for orchestrator re-review of card `008`'s new exact head. Do not open
+`g12` or infer a product backlog pull from this lane.

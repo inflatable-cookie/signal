@@ -167,6 +167,12 @@ impl BinauralConvolver {
 
     /// Convolve a mono block into separate left/right output blocks. All
     /// three slices must share a length.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `input`, `left_out`, and `right_out` do not all have the
+    /// same length. Block sizes are fixed by the render plan, so a mismatch
+    /// is a caller wiring error rather than a runtime condition.
     pub fn process_block(
         &mut self,
         input: &[Sample],

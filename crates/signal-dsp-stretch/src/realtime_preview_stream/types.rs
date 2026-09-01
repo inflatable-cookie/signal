@@ -118,3 +118,23 @@ pub struct RealtimePreviewStreamState {
     pub(crate) spectral_frame_index: u64,
     pub(crate) total_source_frames_consumed: u64,
 }
+
+impl std::fmt::Debug for RealtimePreviewStreamState {
+    /// Reports configuration and ratio-scheduler progress. The FFT plans are
+    /// foreign trait objects and the remaining fields are preallocated
+    /// spectral working buffers.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("RealtimePreviewStreamState")
+            .field("config", &self.config)
+            .field("bins", &self.bins)
+            .field("current_ratio", &self.current_ratio)
+            .field("active_ratio", &self.active_ratio)
+            .field("ratio_change_count", &self.ratio_change_count)
+            .field(
+                "total_source_frames_consumed",
+                &self.total_source_frames_consumed,
+            )
+            .finish_non_exhaustive()
+    }
+}

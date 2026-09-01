@@ -1,9 +1,9 @@
 # 008 - g11.003 Northstar AGENTS And Rust Audit
 
-Status: ready
+Status: complete; one review wave applied, awaiting orchestrator re-review
 Owner: core-product
 Created: 2026-08-31
-Updated: 2026-08-31
+Updated: 2026-09-01
 Master spec refs: none (baseline-routed maintenance lane)
 Roadmap refs: g11.003
 Governing refs: AGENTS.md, CLAUDE.md, docs/contracts/001-working-rules.md, docs/contracts/rust-quality-profile.json, docs/contracts/rust-quality-deviations.json, docs/architecture/system-architecture.md, docs/architecture/system-inventory.md, docs/architecture/product-guardrails.md, docs/roadmaps/g11/003-northstar-instruction-and-rust-quality-audit.md
@@ -57,22 +57,22 @@ splitting.
 
 ## Acceptance Criteria
 
-- [ ] every AGENTS section has a human disposition and its reader need survives
-- [ ] `CLAUDE.md` is exactly the required bridge unless a real Claude-only rule
+- [x] every AGENTS section has a human disposition and its reader need survives
+- [x] `CLAUDE.md` is exactly the required bridge unless a real Claude-only rule
   is evidenced
-- [ ] the Rust audit is initialized before source mutation and finalized once
-- [ ] all 28 crates and their discovered targets/features have a recorded unit
+- [x] the Rust audit is initialized before source mutation and finalized once
+- [x] all 28 crates and their discovered targets/features have a recorded unit
   or explicit exclusion; public API and risk surfaces are named
-- [ ] every approved Rust rule has one verdict per unit and all assessment
+- [x] every approved Rust rule has one verdict per unit and all assessment
   dimensions are attested
-- [ ] every stopslop/manual exact-forwarder candidate has a retain or
+- [x] every stopslop/manual exact-forwarder candidate has a retain or
   report-only disposition and independent `RUST-READ-001` assessment
-- [ ] source changes map only to prior `review_required` plans and passing
+- [x] source changes map only to prior `review_required` plans and passing
   immutable evidence IDs; protected files pass preservation checks
-- [ ] Rust 1.95 evidence is separate from the pinned current toolchain result
-- [ ] closeout names findings, repairs, retained limitations, audit ID,
+- [x] Rust 1.95 evidence is separate from the pinned current toolchain result
+- [x] closeout names findings, repairs, retained limitations, audit ID,
   catalogue hash, changed files, evidence, and honest remaining stops
-- [ ] `effigy qa`, `effigy qa:docs`, `effigy qa:northstar`, and
+- [x] `effigy qa`, `effigy qa:docs`, `effigy qa:northstar`, and
   `git diff --check` are recorded with actual results
 
 ## Review Oracle
@@ -100,7 +100,26 @@ the finalized recorder's changed-file union with the Git diff exactly.
 - a missing sibling/external authority is necessary to judge or repair a seam
 - scope extension would overlap another unit or validation changes the plan
 
+## Result
+
+Audit `signal-g11-003-repository-audit`, status `degraded`, 14 units over all
+28 crates. 97 findings: 28 `RUST-MSRV-001`, 47 `RUST-API-001`, 14
+`RUST-ERR-001` repaired under recorder authority, and 8 `RUST-UNSAFE-001` left
+report-only. 81 recorder-owned files changed plus `AGENTS.md`. `RUST-SLOP-001`
+returned 0 detector candidates over 826 files with a control-verified scanner;
+163 manually identified candidates are all dispositioned retain.
+`effigy qa`, `effigy qa:docs`, `effigy qa:northstar`, and `git diff --check` all
+exit 0. Full result, hashes, and retained limitations:
+`docs/logs/2026-08/31-g11-003-northstar-agents-rust-audit-closeout.md`.
+
+One review wave followed. Linux CI falsified the first-wave `AuProcessSession`
+`Debug` repair: the audit's `plugin-formats` evidence was host-local on macOS and
+never compiled that `cfg`-split public type's non-macOS shape. The corrected file
+is a review-wave change **outside** the finalized recorder hashes; the sealed
+result was not regenerated. Detail and cross-platform proof are in the closeout's
+review-wave section.
+
 ## Next Task
 
-Run this card in the dedicated worker lane. When the PR is ready, stop for
-orchestrator exact-head review; do not start another card.
+Stop for orchestrator re-review of the PR's new exact head. Do not start another
+card.

@@ -37,6 +37,7 @@ pub struct AuCocoaViewInfo {
 /// `NSView` child-attached into the host window's content view. Owned by
 /// [`crate::AuHostedInstance`]; every method (and drop) runs on the
 /// application MAIN THREAD.
+#[derive(Debug)]
 pub struct AuGuiSession {
     /// The retained plugin `NSView` (child of the host's content view).
     #[cfg(target_os = "macos")]

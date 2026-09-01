@@ -50,6 +50,23 @@ pub struct RenderPlan {
     pub(crate) limiter: Option<LimiterState>,
 }
 
+impl std::fmt::Debug for RenderPlan {
+    /// Reports plan identity and topology size. The compiled stages, mix
+    /// matrices, and inheritance maps are large render-side working data.
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("RenderPlan")
+            .field("generation", &self.generation)
+            .field("sample_rate_hz", &self.sample_rate_hz)
+            .field("stages", &self.stages.len())
+            .field("master_index", &self.master_index)
+            .field("stream_channels", &self.stream_channels)
+            .field("boundary_downmix", &!self.boundary_matrix.is_empty())
+            .field("limiter", &self.limiter.is_some())
+            .finish_non_exhaustive()
+    }
+}
+
 impl RenderPlan {
     pub(crate) fn compile(
         spec: &RenderPlanSpec,

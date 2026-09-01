@@ -59,6 +59,14 @@ fn data_bytes_for_status(status: u8) -> Option<usize> {
 /// Parse one packet's raw MIDI bytes, emitting every complete resolved
 /// message stamped with `timestamp_host_nanos` (CoreMIDI timestamps whole
 /// packets, not individual messages). Alloc-free; safe on the read callback.
+///
+/// # Panics
+///
+/// Panics if the internal channel-message accumulator is completed without a
+/// status byte having been latched. Running status is set before any data
+/// byte is accepted, so this is a parser invariant, not a property of the
+/// incoming packet: malformed, truncated, and interleaved real-time bytes are
+/// all handled without panicking.
 pub fn parse_packet(
     state: &mut MidiParseState,
     timestamp_host_nanos: u64,
