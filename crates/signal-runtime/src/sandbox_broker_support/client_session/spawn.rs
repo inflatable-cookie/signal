@@ -11,6 +11,13 @@ use crate::{RuntimeError, RuntimeErrorKind};
 
 use super::super::types::*;
 
+/// Actionable diagnostic when the prebuilt-broker env contract is unset.
+pub(super) fn missing_broker_command_message() -> &'static str {
+    "missing SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND; set it to a prebuilt \
+     signal-plugin-sandbox executable before startup \
+     (docs/reference/consuming-signal.md; `effigy broker:provision`)"
+}
+
 impl SandboxBrokerClientSession {
     /// Returns `true` if the `SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND` environment variable is set.
     pub fn broker_enabled() -> bool {
@@ -18,6 +25,13 @@ impl SandboxBrokerClientSession {
     }
 
     /// Spawns a sandbox broker child process using environment-variable configuration.
+    ///
+    /// Stable Cargo does not supply a dependency package's executable to
+    /// consumers. The caller must set `SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND` to
+    /// a compatible **prebuilt** `signal-plugin-sandbox` binary before startup
+    /// (see `docs/reference/consuming-signal.md`). Provisioning may build or
+    /// retrieve that binary in an explicit step (`effigy broker:provision`);
+    /// consumer startup must not invoke Cargo to obtain it.
     ///
     /// Configuration environment variables:
     ///
@@ -37,7 +51,7 @@ impl SandboxBrokerClientSession {
         let command = std::env::var("SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND").map_err(|_| {
             RuntimeError::new(
                 RuntimeErrorKind::ResourceUnavailable,
-                "missing SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND",
+                missing_broker_command_message(),
             )
         })?;
         let args = std::env::var("SIGNAL_PLUGIN_SANDBOX_BROKER_ARGS")
