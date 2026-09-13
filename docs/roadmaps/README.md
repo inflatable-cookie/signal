@@ -1,6 +1,5 @@
 # Roadmaps
 
-Status: active (`g11`); `g10` stretch audit complete
 Updated: 2026-09-09
 
 ## In plain words

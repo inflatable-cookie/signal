@@ -1,7 +1,5 @@
 # g11 Tasks
 
-Status: `g11.001` complete; `g11.002` complete; `g11.003` complete and merged
-through PR `#18` after one review wave
 Updated: 2026-09-09
 
 ## At a glance
