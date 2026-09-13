@@ -75,11 +75,12 @@ executable planning unit for its task.
 
 Return to operator planning or triage review. `g11` has no ready task; do
 not open `g12` or infer a product pull from triage without operator selection.
-<!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:82722364041974c04209435dc915354d6d16de518349c40678f62c32eb3283c2 -->
+<!-- northstar:lifecycle:begin schema=northstar.lifecycle.projection.v2 digest=sha256:285994a4b995788f61a095359a0b150bd645f28e8c3e76709eb801657f91a878 -->
 | Generation | Disposition | Runway state |
 | --- | --- | --- |
 | g11 | open | planning_required |
 | Task | Status | Stage | Revision | Record digest |
 | --- | --- | --- | --- | --- |
 | g11.004 | complete | none | 8 | sha256:900e068a968d40ef2754db498912bc2e7d649b1607721a059615b905acdc4f09 |
+| g11.005 | complete | none | 8 | sha256:e3020be4ff11a71313025c50cbc857a2f1dfe6c8d5043eb4ac3c70e8c47cdf2f |
 <!-- northstar:lifecycle:end -->
