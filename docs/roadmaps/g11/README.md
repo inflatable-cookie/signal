@@ -70,6 +70,10 @@ executable planning unit for its task.
   declared Queue dependencies and may run without changing product priority.
   Existing next-task text continues to describe product sequencing; this entry
   authorizes no sibling product work.
+- [g11.006 Prospective-merge protocol migration](006-prospective-merge-protocol-migration.md)
+  is an operator-approved, configuration-only maintenance lane that moves the
+  Queue control manifest to the accepted v4 prospective-merge shape. It runs
+  without changing product priority and authorizes no sibling product work.
 
 ## Next Task
 
