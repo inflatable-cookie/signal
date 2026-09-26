@@ -45,9 +45,3 @@ product-style UI shell into Signal.
 - if no suitable installed CLAP or VST3 plugin is available, the official proof
   task may fall back to one bounded temporary VST3 fixture root so the browser
   surface remains testable
-
-## Next Task
-
-Re-enter planning for the active strict `g09` lane and decide whether the next
-honest `g09.015` seam is another crate-family operator-view uplift, deeper live
-plugin interaction, or a planning pause.

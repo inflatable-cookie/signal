@@ -39,8 +39,3 @@ lanes.
   than widening the hub files again
 - prefer moving live task authority files over rewriting historical closeout
   docs when the current surface changes
-
-## Next Task
-
-If the acceptance surface grows again, keep splitting by concern instead of
-adding a new mixed bag file.

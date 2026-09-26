@@ -17,9 +17,11 @@ closeout, and outcomes. Triage notes are leads, not authority.
   `signal-runtime` allocates by design.
 - Treat plugin code as untrusted. Keep plugin and hardware glue at the edge;
   reusable processing stays in owning crates.
-- Keep IPC and message contracts aligned with Chorus specs. When Signal's
-  contracts do not settle a question and sibling Chorus guardrails are
-  absent, stop rather than infer foreign error meaning.
+- Keep IPC and message contracts aligned with Chorus specs. Consult the
+  sibling guardrails at
+  `../chorus/specs/guidelines/agents-operating-guardrails.md`. When Signal's
+  contracts do not settle a question and that checkout is absent, stop rather
+  than infer foreign error meaning.
 - Keep crate and module responsibilities narrow. Prefer real end-to-end
   behavior and typed degraded outcomes over scaffolds or hidden fallback.
 - Avoid compatibility shims unless a governing contract or the operator

@@ -37,9 +37,5 @@ rendered operator views.
 - headless operator-view and platform-boundary demos share the same Bun/TS
   runtime layer
 - the plugin capability browser is the only materially custom runner
-
-## Next Task
-
-Keep shrinking custom logic into `lib/` where it is genuinely reusable, but do
-not force the browser runner into the headless shape if that would hide real
-interactive complexity.
+- custom logic belongs in `lib/` when reusable; the browser runner keeps
+  its interactive-specific shape

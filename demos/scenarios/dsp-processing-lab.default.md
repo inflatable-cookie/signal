@@ -34,8 +34,3 @@ stretch, marker-analysis, and transform-artifact boundary family.
 - analysis feature-inspector remains a separate `g09.013` planning decision
 - this surface does not replace corpus, benchmark, or acceptance automation
 - this surface does not claim media-browser, editor, or product-shell workflow
-
-## Next Task
-
-Continue the active strict `g09` lane from
-the `054-g09-015-dsp-processing-operator-view.md` record in Git history.
