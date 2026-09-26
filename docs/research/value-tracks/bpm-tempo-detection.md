@@ -147,9 +147,3 @@ BPM detection is a solved problem for clear cases but remains challenging for:
 - [ ] `continue research` — need more evidence
 - [x] `prototype first` — ready to validate with Essentia baseline
 - [ ] `promote to concept work` — pending prototype results
-
-## Next Task
-
-Implement a first `signal-analysis-rhythm` prototype against Essentia reference
-tracks and calibrate confidence thresholds before Finch-specific wrapper work
-begins.

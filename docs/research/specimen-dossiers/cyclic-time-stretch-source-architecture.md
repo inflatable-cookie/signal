@@ -506,10 +506,10 @@ crest, level, and tail support are complete comparator-relative diagnostics.
 Concealed musical listening decides character and usefulness.
 
 The canonical decision is
-[Offline Creative Cyclic Behavioral Synthesis](../../architecture/offline-creative-cyclic-behavioral-synthesis.md).
+[Offline Creative Cyclic Behavioral Synthesis](../../knowledge/architecture/offline-creative-cyclic-behavioral-synthesis.md).
 
 Batch 32.4 freezes the selected implementation authority:
-[Offline Creative CenteredCompressedAnchorCyclic Renderer Brief](../../architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md).
+[Offline Creative CenteredCompressedAnchorCyclic Renderer Brief](../../knowledge/architecture/offline-creative-centered-compressed-anchor-cyclic-brief.md).
 
 ## Sources
 
@@ -524,12 +524,3 @@ Batch 32.4 freezes the selected implementation authority:
 - [Sonic source at the pinned revision](https://github.com/waywardgeek/sonic/tree/b93885dcb70aae50c6f76b0fe4e0868f029a077e)
 - [Verhelst and Roelands, WSOLA](https://doi.org/10.21437/Eurospeech.1993-59)
 - [SoundTouch algorithm notes](https://soundtouch.surina.net/README.html)
-
-## Next Task
-
-Batch 32.18 freezes the exact event-ledger evidence authority and executable
-known answers without changing the selected schedule or renderer.
-
-Execute `g10.032` Batch 32.19 only. Implement the frozen authority in its
-fresh isolated worktree and complete both unchanged conformance rounds. Stop
-before `Y01`.

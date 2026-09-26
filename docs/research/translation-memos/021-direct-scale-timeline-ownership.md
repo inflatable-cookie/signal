@@ -132,12 +132,6 @@ cache, production, and product work remain closed.
 - [Rubber Band R3 stretcher](https://github.com/breakfastquay/rubberband/blob/v4.0.0/src/finer/R3Stretcher.cpp)
 - [Signalsmith Stretch source](https://github.com/Signalsmith-Audio/signalsmith-stretch/blob/57b93f4e9206a089a45387eaa39bdc9f310d3308/signalsmith-stretch.h)
 - [Bungee synthesis source](https://github.com/bungee-audio-stretch/bungee/blob/746833f68a574d997ec50443e7cfd2d37b026302/src/Synthesis.cpp)
-- [Rule 31X evidence](../../logs/2026-07/18-g10-029-reference-relative-unlocked-commit.md)
+- Rule 31X evidence (`18-g10-029-reference-relative-unlocked-commit.md` in Git history)
 - [Shared-decision topology](./019-shared-decision-waveform-topology.md)
 - [Bounded sliced representation](./020-bounded-normalized-sliced-integration.md)
-
-## Next Task
-
-Batch 29.7AR now passes under Rule 31Z and memo 022. Run Batch 29.7AS to
-implement direct representation and fixed-storage mechanics only. Keep guided
-phase state and objective audio closed.

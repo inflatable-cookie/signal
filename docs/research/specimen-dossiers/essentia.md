@@ -167,7 +167,3 @@ For each algorithm Finch needs, study Essentia's implementation:
 | License | AGPL | ISC | GPL |
 | Documentation | Good | Excellent | Fair |
 | Community | Academic | Broad | Niche |
-
-## Next Task
-
-Evaluate license compatibility with Finch's distribution model. If compatible, prototype Essentia integration for BPM and key detection tracks.

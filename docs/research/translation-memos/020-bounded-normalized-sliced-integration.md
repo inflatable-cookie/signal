@@ -122,21 +122,3 @@ evidence hash `90c10cd2e66d4faf`. All state and boundary contexts pass; channel
 mechanics are exact; local magnitude and analysis-relative phase remain within
 `4.45e-16`. This validates the mechanics integration, not material policy or
 sound quality.
-
-## Next Task
-
-Rule 31V freezes the unchanged Rule 31R material policy and complete objective
-matrix on this representation. Batch 29.7AO passes synthetic mechanics and
-stops at `46/48` calibrated stereo failures. Batch 29.7AP proves that the
-outer-layer projection adds no relation residual beyond the preceding
-`Unlocked` state commit; slice inversion and overlap are downstream. The
-bounded representation remains valid. Rule 31X changes only the unlocked
-commit ordering before both layers receive the shared result. Batch 29.7AQ
-passes mechanics and synthetic evidence, then rejects its single corrected
-stereo run at `40/48` calibrated failures and `44/48` local-row failures; hash
-`88d9c0f68ea2954b`. The representation remains mechanically valid, but its
-current waveform-ownership topology is closed. Memo 021 retains this work as
-mechanical representation evidence but closes its extra outer meta-slice as a
-quality topology. Batch 29.7AR now preregisters the direct scale timeline under
-Rule 31Z. Run representation-only Batch 29.7AS before guided state or objective
-audio.

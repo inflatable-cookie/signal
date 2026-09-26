@@ -188,12 +188,3 @@ known frame-rate sideband, is the next translation gate.
   current input complex relation to that reference at peer target energy
 - Signal promotes that relationship law, not the specimen's source expression,
   into report-only Batch 29.7E
-
-## Next Task
-
-Batch 29.7AJ retains Signalsmith as the independent single-grid equivariance
-control: greatest-energy reference decisions are followed by peer-relative
-synthesis. It is not the selected professional topology because it supplies no
-complete material-state or frequency-owned scale system. Batch 29.7AK does not
-transfer Signalsmith expression, constants, predictor, or high-ratio
-randomization.

@@ -132,7 +132,7 @@ They are not corpus-fitted quality proxies.
 
 Promoted into:
 
-- `docs/architecture/offline-time-stretch-synthesis.md`
+- `docs/knowledge/architecture/offline-time-stretch-synthesis.md`
 - contract `082`, Rule 31G
 - roadmap `g10.029`, Batches 29.6CL and 29.6CM
 
@@ -310,9 +310,3 @@ topology unchanged for linked-stereo proof.
 | --- | --- | --- |
 | [Signalsmith Stretch](https://github.com/Signalsmith-Audio/signalsmith-stretch/blob/57b93f4e9206a089a45387eaa39bdc9f310d3308/signalsmith-stretch.h) | `57b93f4e` | scheduling and prediction topology |
 | [Signalsmith Linear STFT](https://github.com/Signalsmith-Audio/linear/blob/5668673560146a9cfe38c25315071e3fd68c8317/stft.h) | `56686735` (`0.3.1`) | observed window, overlap, modified FFT sizing, half-bin grid, and normalization |
-
-## Next Task
-
-Freeze Batch 29.7 shared-decision linked-stereo ownership and objective gates.
-Keep further mono equation changes, independent stereo listening, dynamic
-ratio, and product routing closed.

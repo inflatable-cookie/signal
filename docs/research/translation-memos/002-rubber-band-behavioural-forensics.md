@@ -91,7 +91,7 @@ GPL expression and unexplained constants remain outside Signal.
 
 Promoted into:
 
-- `docs/architecture/offline-time-stretch-synthesis.md`
+- `docs/knowledge/architecture/offline-time-stretch-synthesis.md`
 - contract `082`, Rule 29
 - roadmap `g10.029`, Batches 29.6BD through 29.6BG
 
@@ -100,8 +100,3 @@ Promoted into:
 - [Rubber Band technical notes](https://breakfastquay.com/rubberband/technical.html)
 - [Rubber Band integration notes](https://breakfastquay.com/rubberband/integration.html)
 - [Rubber Band stretcher API](https://breakfastquay.com/rubberband/code-doc/classRubberBand_1_1RubberBandStretcher.html)
-
-## Next Task
-
-Prove the simultaneous `512/2048/8192` union frame and exact identity dual
-before study, schedule, phase modification, or tuning.

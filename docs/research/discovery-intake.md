@@ -106,7 +106,3 @@ Each triage entry records:
 | Tier B (production tools) | event-driven (major releases, ISMIR) | research session |
 | Tier C (technical explainers) | as-needed when a topic requires background | research session |
 | Tier D (community/social) | never systematically | research session |
-
-## Next Task
-
-Run the initial triage pass on current secondary signals to populate the triage log and validate the intake process. Focus on recent ISMIR 2024 papers and current commercial tool capabilities.

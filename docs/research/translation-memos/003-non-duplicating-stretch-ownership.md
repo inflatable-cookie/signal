@@ -142,7 +142,7 @@ where this memo names them.
 
 Promoted into:
 
-- `docs/architecture/offline-time-stretch-synthesis.md`
+- `docs/knowledge/architecture/offline-time-stretch-synthesis.md`
 - contract `082`, Rule 30K
 - roadmap `g10.029`, Batch 29.6BP onward
 
@@ -156,9 +156,3 @@ Promoted into:
 | [Dörfler and Matusiak, 2012](https://arxiv.org/abs/1112.5262) | high | Nonstationary Gabor frame existence and painless relation |
 | [Rudoy, Basu, and Wolfe, 2010](https://arxiv.org/abs/0906.5202) | high | Ordered adaptive window ownership and fast overlap-add reconstruction |
 | [Ottosen and Dörfler, 2017](https://arxiv.org/abs/1612.05156) | high | NSG time stretching, adaptive phase locking, and transient treatment |
-
-## Next Task
-
-Do not continue this representation. Memo 004 retires time-adaptive full-band
-ownership after source study identified frequency-partitioned simultaneous
-resolution as the comparator's successful topology.

@@ -90,12 +90,3 @@ kernel rather than switching owners inside it.
 | [phase synthesis](https://github.com/bungee-audio-stretch/bungee/blob/746833f68a574d997ec50443e7cfd2d37b026302/src/Synthesis.cpp) | MPL-2.0 source | pinned | temporal peak advance and common region rotation |
 | [partial regions](https://github.com/bungee-audio-stretch/bungee/blob/746833f68a574d997ec50443e7cfd2d37b026302/src/Partials.cpp) | MPL-2.0 source | pinned | region and transient architecture evidence |
 | [AudioTSM phase vocoder](https://github.com/Muges/audiotsm/blob/cf3875842bda44d81930c44b008937e72109ae9f/audiotsm/phasevocoder.py) | MIT source | `cf387584` | permissive identity-locking control |
-
-## Next Task
-
-Batch 29.7AJ retains Bungee's shared region rotation as independent locked-
-state and channel-equivariant-synthesis evidence. It is not the selected
-complete topology: channel summation can cancel, and Bungee supplies neither
-ordinary/unlocked material ownership nor nonoverlapping frequency scales.
-Batch 29.7AK transfers no Bungee expression, channel summation, constants, or
-transient heuristic.

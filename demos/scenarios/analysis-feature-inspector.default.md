@@ -33,9 +33,3 @@ or plugin workflow.
 - no downstream tagging or recommendation workflow
 - no persistent browser shell; the rendered companion remains a bounded
   low-dependency view over offline example output
-
-## Next Task
-
-Re-enter planning for the active strict `g09` lane and decide whether the next
-honest `g09.015` seam is another crate-family operator-view uplift or a
-planning pause.

@@ -1,13 +1,10 @@
 # Retired backlog: post-g10 rebuild-on-demand candidates
 
 Status: triage (non-authoritative)
-Retired from: `docs/roadmaps/backlog/post-g10-rebuild-on-demand.md` (roadmap-backlog surface retired 2026-09-09)
-Source refs: backlog item created 2026-06-11, updated 2026-08-17; `docs/roadmaps/archive/g10.md`; Contract `072`; `docs/roadmaps/strategic-runway.md` (Horizons B–C)
 Owner: core-product
 
-Triage holds this as unresolved/deferred candidacy only. It is not execution
-authority; the active roadmap and contract front doors remain authoritative.
-Promotion is not approval until an active generation task owns it.
+Triage holds unresolved candidates only. Selection follows the
+[plan](../plan.md) and a Queue brief.
 
 ## Deferred candidates (product-pull only)
 
@@ -21,7 +18,7 @@ product feature needs it — never speculatively.
   for recording, explicit device-selection UI contract. Builds on `g10.003`
   cpal enumeration. Open gate: `g10.017` recording capture and live monitoring
   landed; hardware alignment and consumer evidence remain an explicit operator
-  gate (see `docs/roadmaps/archive/g10.md`).
+  gate (see Contract `046`).
 - **Resampling/time domain.** Higher-quality SRC tiers beyond the `g10.008`
   polyphase table.
 - **Beat tracking upgrade.** Replace fixed-grid beat placement with DP/HMM
@@ -46,13 +43,12 @@ product feature needs it — never speculatively.
   Contract `072` and the architecture docs. Do not reopen.
 - Production host-assembly wiring — closed in `g11.001`.
 - SharedSandbox tier — closed in `g11.002` (map at
-  `docs/architecture/shared-sandbox-multiplexing.md`).
+  `docs/knowledge/architecture/shared-sandbox-multiplexing.md`).
 
 ## Promotion condition
 
-Promote one item only when the operator selects it in
-`docs/roadmaps/strategic-runway.md` or an active generation task requires it.
-Migration from the retired backlog is not approval.
+Promote one item only when the operator selects it through
+[`docs/plan.md`](../plan.md). A triage note grants no execution authority.
 
 ## Open questions
 

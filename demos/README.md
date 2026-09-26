@@ -144,9 +144,3 @@ operator memory.
 - Effigy owns discovery and launch through the demo registry
 - the current live set stays intentionally small and explicit rather than
   widening into product shells or ad hoc utility scripts
-
-## Next Task
-
-Reassess whether another live demo-surface cleanup is actually needed before
-editing historical `g09` material. Prefer changing current authority files over
-rewriting archival closeout records.

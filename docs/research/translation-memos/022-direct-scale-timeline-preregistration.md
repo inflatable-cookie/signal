@@ -122,9 +122,3 @@ direct builder collapses both channels onto one joint peak map, while pinned R3
 retains channel-local peak locations and borrows only a compatible frequency-
 aligned trajectory. Memo 023 and Rule 31AC promote that parameter-free boundary
 for implementation-free mechanics design.
-
-## Next Task
-
-Run Batch 29.7BD under Rule 31AE. Compare retained AX/BC row evidence and audit
-the direct phase/synthesis path without generating new audio. Require causal
-reach over the unchanged hard signature before another candidate.

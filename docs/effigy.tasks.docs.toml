@@ -1,27 +1,16 @@
 [tasks]
 "qa:docs:links" = "effigy docs check links"
 "qa:docs:agent-defaults" = "effigy docs check forbidden AGENTS.md README.md docs/README.md --forbid '--repo .'"
-"qa:docs:headings" = "effigy docs check headings docs/README.md docs/vision/README.md docs/roadmaps/README.md docs/logs/README.md --require-heading '## Next Task'"
-"qa:docs:index:vision" = "effigy docs check index --policy-index vision"
-"qa:docs:next-action:vision" = "effigy docs check next-action --policy vision"
+"qa:docs:headings" = "effigy docs check headings docs/README.md --require-heading '## Read by topic'"
+"qa:docs:knowledge" = "effigy docs check headings docs/knowledge/README.md --require-heading '# Signal knowledge'"
+"qa:docs:plan" = "effigy docs check headings docs/plan.md --require-heading '# Signal plan'"
 "qa:northstar" = [
   { task = "qa:docs:headings" },
-  { task = "qa:docs:index:vision" },
-  { task = "qa:docs:next-action:vision" },
+  { task = "qa:docs:knowledge" },
+  { task = "qa:docs:plan" },
 ]
 "qa:docs" = [
   { task = "qa:docs:links" },
   { task = "qa:docs:agent-defaults" },
   { task = "qa:northstar" },
 ]
-
-
-[docs_policy.indexes.vision]
-file = "docs/vision/README.md"
-dir = "docs/vision"
-section = "Vision Artifacts"
-
-[docs_policy.next_actions.vision]
-index = "vision"
-heading = "## Next Task"
-allowlist_file = "docs/policy/vision-next-task-verbs.txt"

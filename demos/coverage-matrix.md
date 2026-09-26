@@ -120,8 +120,3 @@ workspace without overclaiming live demo coverage before `g09.012` and
 - do not widen the matrix into ad hoc product shells
 - if a crate moves milestones or surfaces, update this file and
   `demos/coverage-matrix.json` together
-
-## Next Task
-
-Reassess whether any remaining cleanup belongs in the live demo registry or
-whether the next meaningful lane is outside `demos/`.

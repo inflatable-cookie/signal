@@ -46,7 +46,3 @@ Purpose: Map promoted research findings to architecture documents, identify gaps
 ### Tier 3: Refinement
 
 1. Complete phase and synthesis proof - follows representation and mapping closure.
-
-## Next Task
-
-Execute Batch 29.6BP single-owner adaptive-frame proof.

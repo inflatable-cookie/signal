@@ -113,9 +113,3 @@ or close each with explicit evidence before another renderer.
 - [Vilkamo, Backstrom, and Kuntz, Optimized Covariance Domain Framework for Time-Frequency Processing of Spatial Audio](https://aes.org/publications/elibrary-page/?id=16831)
 - [McCormack, Politis, and Pulkki, Rendering of Source Spread for Arbitrary Playback Setups Based on Spatial Covariance Matching](https://doi.org/10.1109/WASPAA52581.2021.9632724)
 - [Signal Joint-Synthesis Consistency Boundary](./015-joint-synthesis-consistency-boundary.md)
-
-## Next Task
-
-Batch 29.7AD selects one calibrated single-grid state-complete linked phase-
-vocoder proof in memo 017. Run Batch 29.7AE. Keep Batch 29.8 and product work
-closed until the frozen candidate passes objective validation.

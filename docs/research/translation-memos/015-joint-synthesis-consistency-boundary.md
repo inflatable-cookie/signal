@@ -123,11 +123,5 @@ constraint and a bounded projection order.
 - [Le Roux, Ono, and Sagayama, Explicit Consistency Constraints for STFT Spectrograms](https://www.isca-archive.org/sapa_2008/roux08b_sapa.html)
 - [Masuyama, Togami, and Komatsu, Consistency-Aware Multi-Channel Speech Enhancement](https://arxiv.org/abs/2002.05831)
 - [Holighaus et al., A Framework for Invertible, Real-Time Constant-Q Transforms](https://arxiv.org/abs/1210.0084)
-- [Signal synthesis-closure attribution](../../logs/2026-07/16-g10-029-stereo-synthesis-closure-attribution.md)
-- [Signal analytic-overlap rejection](../../logs/2026-07/16-g10-029-analytic-overlap-rejection.md)
-
-## Next Task
-
-Batch 29.7AD selects one calibrated single-grid state-complete linked phase-
-vocoder proof in memo 017. Run Batch 29.7AE before implementing another DSP
-candidate.
+- Signal synthesis-closure attribution (`16-g10-029-stereo-synthesis-closure-attribution.md` in Git history)
+- Signal analytic-overlap rejection (`16-g10-029-analytic-overlap-rejection.md` in Git history)

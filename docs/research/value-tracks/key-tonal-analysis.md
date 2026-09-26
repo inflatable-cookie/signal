@@ -147,8 +147,3 @@ Key is the second most important piece of metadata (after BPM) for music library
 - [ ] `continue research` — need more evidence
 - [x] `prototype first` — ready to validate
 - [ ] `promote to concept work` — pending prototype
-
-## Next Task
-
-Implement a first `signal-analysis-tonal` prototype with multiple profiles,
-then evaluate confidence calibration before Finch-specific integration work.

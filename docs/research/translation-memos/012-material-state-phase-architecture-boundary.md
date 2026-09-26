@@ -93,9 +93,3 @@ rescue.
 - [Bungee `2.4.24`](https://github.com/bungee-audio-stretch/bungee/tree/746833f68a574d997ec50443e7cfd2d37b026302)
 - [Röbel transient phase-vocoder paper](https://www.dafx.de/paper-archive/2003/pdfs/dafx32.pdf)
 - [Dorran, Lawlor, and Coyle multichannel TSM](https://mural.maynoothuniversity.ie/8793/1/BL-Multi-channel-2005.pdf)
-
-## Next Task
-
-Batch 29.7X closes both missing seams in translation memo 013. Run Batch 29.7Y
-Stage A on the report-only painless frequency-adaptive representation only.
-Keep material phase closed until exact identity reconstruction passes.

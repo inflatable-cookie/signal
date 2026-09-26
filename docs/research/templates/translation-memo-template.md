@@ -29,7 +29,3 @@ Related track:
 
 | Source | Confidence | Notes |
 | --- | --- | --- |
-
-## Next Task
-
-Promote this memo into architecture or roadmap work only when the recommendation has an owner, an evidence plan, and explicit rejected alternatives.

@@ -170,12 +170,5 @@ export SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND="$(effigy broker:provision)"
 
 Focused Signal proof of this boundary: `effigy broker:prove-prebuilt-contract`.
 
-Decision record: `docs/triage/2026-09-01-sandbox-broker-prebuilt-contract.md`.
-Earlier Cargo-dependency diagnosis:
-`docs/logs/2026-08/31-papercuts-wave29-sandbox-broker-consumer-diagnosis.md`.
-
-## Next Task
-
-None. Update the consumer table when a dependency set changes; revisit broker
-distribution only if Signal later chooses release-shipped assets or stable
-Cargo artifact dependencies.
+The [release contract](../knowledge/contracts/release.md#sandbox-broker-distribution)
+owns the broker distribution decision.
