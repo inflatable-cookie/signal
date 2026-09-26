@@ -11,7 +11,7 @@ allow = ["docs/knowledge/retired.toml", "CHANGELOG.md", "fixtures/", "demos/rece
 [[retired]]
 id = "papercuts-file"
 retired = "2026-09-26"
-replacement = "Queue papercuts filed with papercut.add (see the northstar-lean skill)."
+replacement = "Queue papercuts filed with papercut.add (see the northstar skill)."
 owner = "AGENTS.md"
 terms = ["PAPERCUTS.md"]
 allow = ["CHANGELOG.md"]
