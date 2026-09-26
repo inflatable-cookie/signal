@@ -13,7 +13,7 @@
 //! render output differs between optimization profiles, so an absolute hash is
 //! only valid in the profile that captured it.
 //!
-//! Governing laws: `docs/contracts/046-sample-domain-time-stretch-engine-contract.md`,
+//! Governing laws: `docs/knowledge/contracts/046-sample-domain-time-stretch-engine-contract.md`,
 //! 2026-07-27 Transparent renderer defect correction addendum.
 
 use signal_dsp_stretch::{

@@ -1,0 +1,9 @@
+[[retired]]
+id = "northstar-process-records"
+retired = "2026-09-26"
+replacement = "Knowledge in docs/knowledge/, intent in docs/plan.md; tasks, briefs, status and outcomes live in Queue."
+owner = "docs/knowledge/README.md"
+terms = ["roadmap card", "generation index", "northstar:lifecycle", "chatterbox handoff"]
+paths = [".northstar/lifecycle/", "docs/roadmaps/", "docs/handoffs/", "docs/logs/", "docs/specs/"]
+config_keys = ["northstar/queue:hook", "paseo.queue.control.v4"]
+allow = ["docs/knowledge/retired.toml", "CHANGELOG.md", "docs/research/translation-memos/", "docs/research/specimen-dossiers/", "fixtures/", "demos/receipts/"]

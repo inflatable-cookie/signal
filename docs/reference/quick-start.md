@@ -217,7 +217,7 @@ println!("beats={}", result.beat_positions_seconds.len());
 Other analyzers follow the same pattern: `signal-analysis-tonal` (key
 detection, chroma) and `signal-analysis-embed` (descriptor embedding) both
 ship `offline_*` examples. See the
-[DSP and analysis feature reference](../architecture/dsp-analysis-feature-reference.md)
+[DSP and analysis feature reference](../knowledge/architecture/dsp-analysis-feature-reference.md)
 for the full surface.
 
 ## 4. Creative stretch: `Dream` and `Cyclic`
@@ -262,13 +262,13 @@ The rules in one breath:
 ## Next steps
 
 - Use Signal from another repository: [Consuming Signal](./consuming-signal.md)
-- Full crate inventory: [System Inventory](../architecture/system-inventory.md)
+- Full crate inventory: [System Inventory](../knowledge/architecture/system-inventory.md)
 - What the DSP/analysis crates expose today:
-  [DSP and Analysis Feature Reference](../architecture/dsp-analysis-feature-reference.md)
+  [DSP and Analysis Feature Reference](../knowledge/architecture/dsp-analysis-feature-reference.md)
 - What the runtime/graph crates expose today:
-  [Graph and Runtime Feature Reference](../architecture/graph-runtime-feature-reference.md)
+  [Graph and Runtime Feature Reference](../knowledge/architecture/graph-runtime-feature-reference.md)
 - Plugin discovery (CLAP/VST3/AU/LV2): host-local example
   `cargo run -p signal-host-local --example signal_host_local_plugin_capability_scan`
 - The transparent (faithful) stretch renderer: `OfflineHighQualityStretcher`,
   documented in the
-  [time-stretch synthesis doc](../architecture/offline-time-stretch-synthesis.md)
+  [time-stretch synthesis doc](../knowledge/architecture/offline-time-stretch-synthesis.md)

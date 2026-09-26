@@ -25,7 +25,7 @@ rewriting it.
 | **docs spine / Northstar** | The document structure used here: Vision → Architecture → Contracts → Roadmaps → Logs. Each layer answers a different question (see `docs/README.md`). |
 | **Vision** | The long-horizon "what are we building and why" layer. |
 | **Architecture** | The "how it fits together" layer: crates, boundaries, invariants. |
-| **Contract** | A frozen boundary decision. Numbered `001`–`085`, each a `.md` file in `docs/contracts/`. Contracts exist because prose architecture was not precise enough for some seam. See `docs/contracts/contract-index.md`. |
+| **Contract** | A frozen boundary decision. Numbered `001`–`085`, each a `.md` file in `docs/knowledge/contracts/`. Contracts exist because prose architecture was not precise enough for some seam. See `docs/knowledge/contracts/contract-index.md`. |
 | **Roadmap task** | A numbered delivery plan, written as `gNN.NNN` (e.g. `g11.002`). The `gNN` is the generation, the `NNN` is the task. Each task is one file at `docs/roadmaps/gNN/NNN-<slug>.md`; the generation README owns the roadmap and approved frontier. |
 | **Generation** | A numbered wave of work, `g01`…`g11`. `g11` is the active one; `g01`–`g10` are archived under `docs/roadmaps/archive/`. A new generation opens only when the previous one is fully closed. |
 | **Batch** | A historical unit of execution inside a pre-flattening milestone (e.g. "Batch 31.66" belonged to `g10.031`). Batch logs remain the evidence trail in `docs/logs/`, but no active executable surface uses batches. |
@@ -98,6 +98,6 @@ rewriting it.
 | --- | --- |
 | `g11.002` | Generation 11, task 002 |
 | `Batch 31.66` | Historical batch 66 inside old milestone `g10.031` (see `docs/roadmaps/archive/g10.md`) |
-| `Contract 084` | Contract number 084 in `docs/contracts/` |
+| `Contract 084` | Contract number 084 in `docs/knowledge/contracts/` |
 | `Y01`…`Y09`, `S01`…`S17` | Named evidence gates (synthetic pitch, structural proof, etc.) defined inside a contract or brief |
 | `4x` / `8x` / `16x` | Stretch ratios: output is 4, 8, or 16 times the source length |

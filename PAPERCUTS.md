@@ -91,7 +91,7 @@ they hit a solvable hurdle; they do not stop the current task to fix one.
 - Fix: verified Contract `072`, backlog, architecture, and strategic runway on
   this SHA already state CLAP/VST3/AU/LV2 hosting is shipped; runway now names
   closed `g11.001`/`g11.002` integration rather than remaining hosting gaps.
-- Surface: docs/architecture, docs/roadmaps/backlog, docs/contracts/072
+- Surface: docs/knowledge/architecture, docs/roadmaps/backlog, docs/contracts/072
 
 ### [x] Northstar refresh found stale Next Task pointers — 2026-08-17
 - Friction: live docs/architecture/contracts/roadmap front doors still pointed
@@ -128,4 +128,4 @@ they hit a solvable hurdle; they do not stop the current task to fix one.
   survived `g10` closeout into this migration.
 - Fix: add a compaction-step checklist item (or link-check scope) for
   `Planning authority:` lines naming generation paths.
-- Surface: `docs/contracts/`, `effigy docs check links`
+- Surface: `docs/knowledge/contracts/`, `effigy docs check links`

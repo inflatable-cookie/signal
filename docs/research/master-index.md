@@ -68,10 +68,10 @@ decision controls any future reopening.
 | [Cyclic Time-Stretch Source Architecture](./specimen-dossiers/cyclic-time-stretch-source-architecture.md) | Akai fixed `CYCLIC` versus adaptive `INTELL`, Potenza slow-anchor grains, SickoCV repeat/jump cycles, Sonic period insertion, and ReaReaRea forensics | Reviewed; centred compressed-anchor behavior selected |
 
 Current stretch feasibility decision:
-[Offline Time-Stretch Non-Phase-Vocoder Feasibility](../architecture/offline-time-stretch-non-phase-vocoder-feasibility.md).
+[Offline Time-Stretch Non-Phase-Vocoder Feasibility](../knowledge/architecture/offline-time-stretch-non-phase-vocoder-feasibility.md).
 
 Current creative-stretch decision:
-[Offline Creative Time-Stretch Study](../architecture/offline-creative-time-stretch-study.md).
+[Offline Creative Time-Stretch Study](../knowledge/architecture/offline-creative-time-stretch-study.md).
 Its automatic `4x`-`16x` spectral route is paused. Both explicit cyclic
 candidates are rejected and deleted: the first failed synthetic pitch, and the
 similarity-aligned replacement failed structural search reachability. Final
@@ -102,10 +102,10 @@ the operator correction: the renderer did not fail, so the exact checkpoint
 may replay `Y01` once with an absolute evidence root.
 
 Current Cyclic decision:
-[Offline Creative Cyclic Behavioral Synthesis](../architecture/offline-creative-cyclic-behavioral-synthesis.md).
+[Offline Creative Cyclic Behavioral Synthesis](../knowledge/architecture/offline-creative-cyclic-behavioral-synthesis.md).
 
 Current Cyclic candidate authority:
-[Offline Creative EventLedgerAuditedCenteredCompressedAnchorCyclic Brief](../architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md).
+[Offline Creative EventLedgerAuditedCenteredCompressedAnchorCyclic Brief](../knowledge/architecture/offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md).
 
 Explicit operator research reopening and pinned source triangulation selected
 one materially different neutral `Dream` family: `RenewalSpectral`. Later
@@ -160,7 +160,7 @@ authority failure. Batch 31.64 found no unused, materially simpler fifth
 family. Direct PaulX-style magnitude renewal remains the smallest source-backed
 owner of the accepted sound. Batch 31.65 records the operator-authorized
 product-gate reset and freezes one complete implementation authority:
-[Offline Creative Direct-Renewal Owner Study](../architecture/offline-creative-direct-renewal-owner-study.md).
+[Offline Creative Direct-Renewal Owner Study](../knowledge/architecture/offline-creative-direct-renewal-owner-study.md).
 
 Batch 31.66 passed that complete candidate and Batch 31.67 admitted its exact
 private fixed-ratio surface. Batch 31.68 retained the lower-overlap pause.
@@ -173,40 +173,40 @@ that identity. Batch 31.72 froze one source-clean `AuditedLayeredCloud`
 replacement with complete executable evidence ownership.
 
 Admitted private renderer authority:
-[Offline Creative DirectRenewalDream Renderer Brief](../architecture/offline-creative-direct-renewal-dream-brief.md).
+[Offline Creative DirectRenewalDream Renderer Brief](../knowledge/architecture/offline-creative-direct-renewal-dream-brief.md).
 
 Frozen high-range candidate authority:
-[Offline Creative AuditedLayeredCloud Renderer Brief](../architecture/offline-creative-audited-layered-cloud-brief.md).
+[Offline Creative AuditedLayeredCloud Renderer Brief](../knowledge/architecture/offline-creative-audited-layered-cloud-brief.md).
 
 Closed evidence-invalid brief and audit ledger:
-[Offline Creative LayeredCloud Renderer Brief](../architecture/offline-creative-layered-cloud-brief.md).
+[Offline Creative LayeredCloud Renderer Brief](../knowledge/architecture/offline-creative-layered-cloud-brief.md).
 
 Rejected comparator-audited neutral `Dream` candidate brief:
-[Offline Creative ComparatorAuditedRenewalSpectral Renderer Brief](../architecture/offline-creative-comparator-audited-renewal-spectral-brief.md).
+[Offline Creative ComparatorAuditedRenewalSpectral Renderer Brief](../knowledge/architecture/offline-creative-comparator-audited-renewal-spectral-brief.md).
 
 Rejected support-audited neutral `Dream` candidate brief:
-[Offline Creative SupportAuditedListeningLedSourceRelativeRenewalSpectral Renderer Brief](../architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md).
+[Offline Creative SupportAuditedListeningLedSourceRelativeRenewalSpectral Renderer Brief](../knowledge/architecture/offline-creative-verified-source-relative-renewal-spectral-brief.md).
 
 Rejected-at-compile neutral `Dream` successor brief:
-[Offline Creative CompensatedRenewalSpectral Renderer Brief](../architecture/offline-creative-compensated-renewal-spectral-brief.md).
+[Offline Creative CompensatedRenewalSpectral Renderer Brief](../knowledge/architecture/offline-creative-compensated-renewal-spectral-brief.md).
 
 Rejected neutral `Dream` brief:
-[Offline Creative RenewalSpectral Renderer Brief](../architecture/offline-creative-renewal-spectral-brief.md).
+[Offline Creative RenewalSpectral Renderer Brief](../knowledge/architecture/offline-creative-renewal-spectral-brief.md).
 
 Rejected similarity-aligned cyclic brief:
-[Offline Creative SimilarityAlignedCyclic Renderer Brief](../architecture/offline-creative-similarity-aligned-cyclic-brief.md).
+[Offline Creative SimilarityAlignedCyclic Renderer Brief](../knowledge/architecture/offline-creative-similarity-aligned-cyclic-brief.md).
 
 Rejected cyclic-owner brief:
-[Offline Creative CyclicGrain Renderer Brief](../architecture/offline-creative-cyclic-grain-brief.md).
+[Offline Creative CyclicGrain Renderer Brief](../knowledge/architecture/offline-creative-cyclic-grain-brief.md).
 
 Rejected final-candidate brief:
-[Offline Creative ContinuousExcitationComplexRelation Renderer Brief](../architecture/offline-creative-continuous-excitation-complex-relation-brief.md).
+[Offline Creative ContinuousExcitationComplexRelation Renderer Brief](../knowledge/architecture/offline-creative-continuous-excitation-complex-relation-brief.md).
 
 Rejected replacement brief:
-[Offline Creative ContinuousExcitationSpectral Renderer Brief](../architecture/offline-creative-continuous-excitation-spectral-brief.md).
+[Offline Creative ContinuousExcitationSpectral Renderer Brief](../knowledge/architecture/offline-creative-continuous-excitation-spectral-brief.md).
 
 Rejected first-owner brief:
-[Offline Creative DiffuseSpectral Renderer Brief](../architecture/offline-creative-diffuse-spectral-brief.md).
+[Offline Creative DiffuseSpectral Renderer Brief](../knowledge/architecture/offline-creative-diffuse-spectral-brief.md).
 
 ## Translation Memos
 

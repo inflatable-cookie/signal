@@ -46,7 +46,7 @@ product feature needs it — never speculatively.
   Contract `072` and the architecture docs. Do not reopen.
 - Production host-assembly wiring — closed in `g11.001`.
 - SharedSandbox tier — closed in `g11.002` (map at
-  `docs/architecture/shared-sandbox-multiplexing.md`).
+  `docs/knowledge/architecture/shared-sandbox-multiplexing.md`).
 
 ## Promotion condition
 

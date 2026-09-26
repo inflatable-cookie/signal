@@ -10,12 +10,12 @@ The active front doors consistently say Signal is baseline-routed with no
 ready card and should stop for operator selection. Two lower-authority
 surfaces still name completed work:
 
-- `docs/architecture/system-inventory.md` says to execute the completed
+- `docs/knowledge/architecture/system-inventory.md` says to execute the completed
   `g11.002` batch card `005`.
-- `docs/contracts/contract-index.md` says to execute the completed `g10.034`
+- `docs/knowledge/contracts/contract-index.md` says to execute the completed `g10.034`
   Batch `34.3`.
 
-The superseded `docs/architecture/package-map.md` also carries historical
+The superseded `docs/knowledge/architecture/package-map.md` also carries historical
 execution text, but its banner already marks the map as superseded in part.
 
 ## Disposition
