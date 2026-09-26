@@ -571,8 +571,3 @@ single-seed admission receipt.
 - Batch 31.35 impulse-support reconciliation
 - Batch 31.36 stereo rejection
 - [Creative product contract](../contracts/085-creative-time-stretch-product-and-routing-contract.md)
-
-## Next Task
-
-Follow the fresh comparator-audited brief. Do not recover or reinterpret this
-rejected checkpoint.

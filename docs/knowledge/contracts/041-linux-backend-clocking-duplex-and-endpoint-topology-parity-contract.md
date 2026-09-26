@@ -267,10 +267,3 @@ endpoint-topology proof seam:
 This contract is now closed for `g07.010`. Later Linux queues may deepen live
 backend ownership, but they must build on this bounded parity seam rather than
 reopening Linux clocking or topology meaning.
-
-## Next Task
-
-Continue `g07.012` with Batch 12.2 by materializing the first runtime-owned
-MIDI 2.0, MPE, and richer controller-expression receipt family across runtime,
-plugin, and hardware surfaces without reopening adapter-private packet
-ownership.

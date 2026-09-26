@@ -410,10 +410,3 @@ That seam proves:
   `supervisor_report()`
 - consumers can inspect the shared fault-diagnostic boundary without private
   host helpers or log parsing
-
-## Next Task
-
-Continue `g06.006` with Batch 6.1 by defining the first per-block timing and
-pressure snapshot contract so later instrumentation work can compose with the
-now-closed fault-diagnostic boundary instead of inventing a second profiling
-taxonomy.

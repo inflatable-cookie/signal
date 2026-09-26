@@ -360,9 +360,3 @@ other character, router, Loophole, or Chorus integration.
 - [Creative source triangulation](../../research/specimen-dossiers/creative-stretch-source-triangulation.md)
 - Batch 31.25 stereo rejection
 - [Creative time-stretch product contract](../contracts/085-creative-time-stretch-product-and-routing-contract.md)
-
-## Next Task
-
-Historical only. Batch 31.28 completed the vector audit and froze
-`VerifiedSourceRelativeRenewalSpectral` as fresh authority. Run Batch 31.29
-from that brief; do not recover or patch this rejected candidate.

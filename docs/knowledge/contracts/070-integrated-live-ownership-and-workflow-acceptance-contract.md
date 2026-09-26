@@ -245,12 +245,5 @@ Batch 19.1 intentionally leaves these out:
   now composes the four grouped lanes, the integrated descriptor proof, the
   integrated descriptor itself, and the grouped export proof into one reusable
   shared integrated acceptance seam
-- this completes the bounded `g08.019` integrated acceptance contract and
-  leaves `g08.020` as the next explicit queue for generation closeout and
-  downstream workflow readiness
-
-## Next task
-
-Continue `g08.020` with Batch 20.1 by freezing the shared generation closeout
-and downstream workflow readiness contract on top of the closed `g08.019`
-integrated acceptance seam.
+- this completes the bounded integrated acceptance boundary. Contract `071`
+  owns the downstream workflow readiness gate.

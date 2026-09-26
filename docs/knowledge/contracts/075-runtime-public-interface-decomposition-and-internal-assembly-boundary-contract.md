@@ -44,9 +44,3 @@ layers.
 - public API diff review for each extraction tranche
 - compile-only conformance for downstream-style imports
 - reduced root-file and import-wall pressure in `signal-runtime`
-
-## Next Task
-
-Use this contract for the active `g09.007` runtime decomposition lane, starting
-with the remaining internal assembly wall and then normalizing the runtime test
-surface against the same family boundaries.

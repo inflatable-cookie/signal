@@ -264,9 +264,3 @@ substrate:
 
 This contract is now frozen and proven for the bounded immersive room-policy
 seam. Later work may widen it, but it should not reopen ownership.
-
-## Next Task
-
-Open `g08.007` with Batch 7.1 by freezing the first runtime-owned speaker
-deployment, fold-down, and monitoring-scene contract on top of the closed
-immersive room-policy seam.

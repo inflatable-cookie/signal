@@ -921,9 +921,3 @@ Useful entry points for readers who want the implementation after this doc:
 - `crates/signal-analysis-rhythm/examples/file_rhythm_probe.rs`
 - `crates/signal-analysis-tonal/examples/offline_tonal_demo.rs`
 - `crates/signal-analysis-loudness/examples/offline_loudness_demo.rs`
-
-## Next Task
-
-The `g02` DSP and analysis spine is complete. Open a new generation only when
-future work needs another sequenced expansion beyond the current shipped
-surface and acceptance harness.

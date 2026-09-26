@@ -232,9 +232,3 @@ persistence-only acceptance lane:
   clip-render, offline preview, and both stable host edges continue to close
   on one shared seam without a browser-local storage ledger or host-local
   cache-policy shell
-
-## Next Task
-
-Continue `g08.014` with Batch 14.1 by freezing the first runtime-owned live
-external MIDI device ownership and backend parity contract on top of the
-closed transform-persistence seam.

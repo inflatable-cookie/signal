@@ -177,9 +177,3 @@ This first `g05.001` contract intentionally defers several areas:
 
 Those areas belong to later `g05` milestones after the widened capability
 boundary is explicit.
-
-## Next Task
-
-Continue `g05.005` with Batch 5.1 by defining the combined `g05`
-generation-closeout descriptor and task without weakening the runtime-owned
-backend-neutral boundary.

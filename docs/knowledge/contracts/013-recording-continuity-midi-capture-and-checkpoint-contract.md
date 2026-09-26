@@ -275,9 +275,3 @@ The current repo-owned baseline that this contract builds on is:
 - `RuntimeSupervisorReport`
 - `RuntimeSupervisorApi`
 - `docs/knowledge/contracts/012-runtime-interruption-taxonomy-and-resumability-contract.md`
-
-## Next Task
-
-Continue `g06.003` with Batch 3.1 by defining the shared plugin rebind,
-placement, and shared-sandbox continuity contract on top of the now-closed
-recording and interruption continuity vocabulary.

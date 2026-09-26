@@ -204,10 +204,3 @@ construction, and every structural gate, and remains one-shot after that.
 
 This waiver covers `g10.039` only. It is not a precedent for renderer
 candidates that replace an admitted path.
-
-## Next Task
-
-No successor task remains. Execute `g10.036` Batch 36.2 under Rule 9. Reopen
-successor research only when
-`docs/knowledge/architecture/offline-time-stretch-non-phase-vocoder-feasibility.md`
-records new whole-system evidence satisfying its triggers.

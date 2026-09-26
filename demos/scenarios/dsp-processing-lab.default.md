@@ -38,4 +38,4 @@ stretch, marker-analysis, and transform-artifact boundary family.
 ## Next Task
 
 Continue the active strict `g09` lane from
-`docs/specs/batch-cards/054-g09-015-dsp-processing-operator-view.md`.
+the `054-g09-015-dsp-processing-operator-view.md` record in Git history.

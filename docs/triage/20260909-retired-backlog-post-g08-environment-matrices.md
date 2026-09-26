@@ -1,13 +1,11 @@
 # Retired backlog: post-g08 repeated-run and environment-matrix depth
 
 Status: triage (non-authoritative)
-Retired from: `docs/roadmaps/backlog/post-g08-repeated-run-environment-matrices-and-downstream-workflow-depth.md` (roadmap-backlog surface retired 2026-09-09)
-Source refs: backlog item sourced from `g08.020`; `docs/roadmaps/archive/g08.md`; Contract `071`
+Source: Contract `071` and the historical `g08.020` closeout in Git history.
 Owner: core-product
 
-Triage holds this as unresolved/deferred candidacy only. It is not execution
-authority; the active roadmap and contract front doors remain authoritative.
-Promotion is not approval until an active generation task owns it.
+Triage holds unresolved candidates only. Selection follows the
+[plan](../plan.md) and a Queue brief.
 
 ## Deferred candidacy
 

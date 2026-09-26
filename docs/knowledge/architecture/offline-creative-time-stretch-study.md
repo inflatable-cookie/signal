@@ -1414,9 +1414,3 @@ one isolated candidate. Public widening remains blocked.
 - [Moulines and Charpentier, PSOLA](https://doi.org/10.1016/0167-6393(90)90021-Z)
 - [Rudresh et al., ESOLA](https://arxiv.org/abs/1801.06492)
 - [Roberts and Paliwal, FESOLA](https://doi.org/10.1109/WASPAA.2019.8937258)
-
-## Next Task
-
-No Signal stretch implementation batch is ready. Preserve the explicit matrix
-and return to the `g10` front door for an operator-selected Signal-only
-planning target. Do not infer Automatic, integration, or RealtimePreview work.

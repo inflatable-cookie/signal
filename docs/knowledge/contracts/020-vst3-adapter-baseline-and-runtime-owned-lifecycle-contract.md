@@ -236,9 +236,3 @@ Batch 9.3 turns the VST3 baseline into a shared consumer boundary:
 Deferred scope remains explicit: richer VST3 event, unit, and program-list
 depth still belong to later cross-adapter or parity work rather than this first
 baseline.
-
-## Next Task
-
-Continue `g06.010` with Batch 10.1 by mapping AU-specific discovery,
-lifecycle, and macOS-scoped capability detail onto the shared backend-neutral
-plugin contract before runtime-owned AU realization widens.

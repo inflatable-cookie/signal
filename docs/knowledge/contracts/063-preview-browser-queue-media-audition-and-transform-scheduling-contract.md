@@ -236,9 +236,3 @@ receipt family:
 - the repo-owned acceptance lane continues to reuse the focused public runtime
   and stable host-edge proofs, but now closes the preview-browser queue and
   transform-scheduling seam without a second preview-workflow acceptance shell
-
-## Next Task
-
-Open `g08.013` with Batch 13.1 by freezing the first runtime-owned
-asset/session transform persistence, retention, and cache placement policy
-contract on top of the closed preview-workflow seam.

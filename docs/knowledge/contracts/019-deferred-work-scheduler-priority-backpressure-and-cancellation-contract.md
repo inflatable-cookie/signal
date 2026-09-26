@@ -246,9 +246,3 @@ policy seam:
 This closes `g06.008` on one bounded local runtime-owned scheduler-policy seam
 while still deferring any generic future job scheduler or distributed
 orchestration model.
-
-## Next Task
-
-Continue `g06.009` with Batch 9.1 by mapping VST3-specific details onto the
-existing backend-neutral capability and lifecycle contract before runtime
-realization widens.

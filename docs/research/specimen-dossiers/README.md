@@ -13,9 +13,3 @@ Current stretch dossiers:
 - `bungee-source-architecture.md`
 - `sbsms-source-architecture.md`
 - `creative-stretch-source-triangulation.md`
-
-## Next Task
-
-The source triangulation now supports the admitted exact-ratio `Dream`
-renderer. Do not add another stretch dossier unless a new source changes the
-deferred high-range or routing architecture.

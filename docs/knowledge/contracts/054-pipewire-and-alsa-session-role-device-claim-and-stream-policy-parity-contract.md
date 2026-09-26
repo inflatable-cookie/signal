@@ -231,9 +231,3 @@ receipt family:
 - this contract is now complete: later Linux workflow and acceptance queues
   can consume one explicit PipeWire and ALSA parity boundary instead of
   reopening backend-local authority
-
-## Next Task
-
-Open `g08.004` with Batch 4.1 by freezing the first runtime-owned LV2 worker,
-URID, patch, and extension-negotiation contract on top of the now-closed live
-Linux ownership, JACK coordination, and PipeWire/ALSA parity seams.

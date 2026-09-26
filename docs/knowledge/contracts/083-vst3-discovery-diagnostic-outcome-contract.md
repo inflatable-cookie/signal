@@ -4,7 +4,7 @@ Status: active
 Owner: core-product
 Updated: 2026-07-10
 Related contracts: `docs/knowledge/contracts/016-runtime-fault-cause-attribution-and-diagnostic-receipt-contract.md`, `docs/knowledge/contracts/020-vst3-adapter-baseline-and-runtime-owned-lifecycle-contract.md`
-Consumer evidence: `../soundcheck/docs/logs/2026-07/10-201500-g04-native-product-reality-audit.md`
+Consumer evidence: Soundcheck’s `10-201500-g04-native-product-reality-audit.md` record at the pinned source revision
 
 ## Purpose
 
@@ -79,7 +79,3 @@ it as a projection of the detailed batch.
 - malformed output produces `invalid_data`
 - later bundles still run after any earlier failure
 - existing Signal VST3 tests and repo health remain green
-
-## Next Task
-
-Soundcheck card 058 implements this narrow boundary without changing runtime hosting.

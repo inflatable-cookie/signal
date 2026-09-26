@@ -34,9 +34,3 @@ shared-memory IPC.
 - IPC lifecycle tests for stale-region cleanup and ownership loss
 - stable runtime or supervisor receipts for degraded-path behavior where
   recovery is allowed
-
-## Next Task
-
-Use this contract for the active strict `g09.008` lane. If no further bounded
-hardening seam remains, stop and hand the lane back to planning before
-continuing into `g09.009`.

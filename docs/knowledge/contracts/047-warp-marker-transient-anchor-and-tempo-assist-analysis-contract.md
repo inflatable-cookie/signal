@@ -234,10 +234,3 @@ marker-analysis contract:
 This closes the bounded `g07.016` contract seam while keeping fuller
 editor-grade marker tooling, artifact-cache depth, and low-latency audition
 explicitly deferred.
-
-## Next Task
-
-Continue `g07.017` with Batch 17.2 by materializing the first runtime-owned
-post-warp render, cache, transform-artifact readiness, invalidation, and reuse
-receipt family across runtime, supervisor, render-preview, and stable
-host-edge surfaces without reopening host-local preview-cache ownership.

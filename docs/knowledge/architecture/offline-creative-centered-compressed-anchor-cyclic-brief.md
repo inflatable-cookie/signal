@@ -743,10 +743,3 @@ Only a complete pass may open a separate admission batch for:
 Do not admit public `Cyclic`, Auto, `INTELL`, routing, cache, artifacts,
 dynamic ratio, pitch, reverse, seed, Dream controls, runtime integration,
 Loophole, or Chorus.
-
-## Next Task
-
-Use the fresh
-[EventLedgerAuditedCenteredCompressedAnchorCyclic](./offline-creative-event-ledger-audited-centered-compressed-anchor-cyclic-brief.md)
-authority. This historical checkpoint remains evidence-invalid and may not be
-repaired, rerun, or recovered.

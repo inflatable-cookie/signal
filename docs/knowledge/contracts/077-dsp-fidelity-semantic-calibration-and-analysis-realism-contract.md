@@ -33,8 +33,3 @@ beyond bounded placeholder fidelity in resampling and semantic-tag projection.
 - objective resampling quality benchmarks and acceptance thresholds
 - semantic-tag corpus evaluation and calibration evidence
 - interactive demo coverage under contract `079`
-
-## Next Task
-
-Use this contract as the completed fidelity baseline that hands the strict lane
-forward from `g09.009` into rhythm resilience work under contract `078`.

@@ -265,10 +265,3 @@ This means complex plugin-I/O, multi-output instrument, and bus-capable FX
 meaning now remains consumable without adapter-local pin reconstruction across
 the shared runtime and host-edge surfaces that downstream consumers actually
 use.
-
-## Next Task
-
-Continue `g07.006` with Batch 6.2 by materializing runtime-owned surround-bed,
-object-role, mix-policy, render-scope, and expanded-fallback receipts across
-execution, render, and observation surfaces without reopening host-local or
-renderer-local spatial ownership.

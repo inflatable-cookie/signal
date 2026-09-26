@@ -248,9 +248,3 @@ Batch 4.3 closes the bounded LV2 extension consumer seam.
 - the machine-readable supervisor boundary now describes worker posture, URID
   negotiation posture, patch exchange posture, and extension-negotiation state
   as one bounded shared proof surface
-
-## Next Task
-
-Open `g08.005` with Batch 5.1 by freezing the first runtime-owned complex
-plugin pin-matrix and dynamic bus-negotiation contract on top of the closed
-LV2 extension, Linux parity, and live backend seams.

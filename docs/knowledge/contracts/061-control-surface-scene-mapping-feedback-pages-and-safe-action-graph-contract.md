@@ -253,12 +253,6 @@ for Signal:
   through bounded scene or action meaning rather than product-local controller
   UX or host-local scripting glue
 
-## Next Task
-
-Open `g08.011` with Batch 11.1 by freezing the first runtime-owned preview-
-output routing, audition-sink ownership, and low-latency device-policy
-contract on top of the closed controller and workflow seams.
-
 ## Batch 10.2 outcome
 
 Batch 10.2 materializes the first runtime-owned control-surface workflow

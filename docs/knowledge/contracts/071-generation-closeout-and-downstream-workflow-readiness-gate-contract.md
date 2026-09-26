@@ -276,9 +276,3 @@ one typed, repo-owned gate instead of a manual summary.
   readiness is sufficient for closeout, while broader repeated-run confidence,
   environment matrices, and product-local workflows remain explicit deferred
   triage candidacy
-
-## Next Task
-
-COMPLETE. `g08` is closed. Promote
-`docs/triage/20260909-retired-backlog-post-g08-environment-matrices.md`
-only when maintainers choose to open the post-`g08` generation.

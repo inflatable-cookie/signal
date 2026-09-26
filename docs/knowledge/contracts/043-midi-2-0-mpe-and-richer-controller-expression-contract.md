@@ -223,10 +223,3 @@ Batch 12.3 closes the widened controller-expression proof seam:
 `g07.012` is therefore closed as a bounded controller-expression milestone.
 Later control-surface work can widen from this proof seam instead of reopening
 event ownership.
-
-## Next Task
-
-Continue `g07.013` with Batch 13.1 by freezing the runtime-owned
-control-surface transport, mapping, feedback, and capability contract on top
-of the now-closed external MIDI endpoint and widened controller-expression
-boundaries.

@@ -215,9 +215,3 @@ Batch 13.3 closes the bounded control-surface proof seam:
 This contract is now closed as the bounded control-surface baseline. Richer
 hardware extensibility, vendor protocol depth, and scripting-safe policy widen
 from `g07.014`.
-
-## Next Task
-
-Continue `g07.014` with Batch 14.1 by freezing the runtime-owned advanced
-hardware extensibility, scripting-safe device policy, and guarded feedback
-contract on top of the now-closed control-surface baseline.

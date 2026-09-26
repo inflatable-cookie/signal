@@ -242,8 +242,3 @@ Lint runs twice because `--all-features` cannot see cfg-gated code that only
 compiles when a feature is off. This generation already lost a mis-gated
 re-export to exactly that blind spot — every validation command used
 `--all-features`, so nothing reported it. `lint:no-features` closes it.
-
-## Next Task
-
-Use this contract when reopening or auditing a future readiness gate after
-next-generation planning.

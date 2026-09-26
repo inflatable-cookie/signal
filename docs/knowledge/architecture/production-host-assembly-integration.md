@@ -3,7 +3,7 @@
 Status: active
 Owner: core-product
 Updated: 2026-08-17
-Roadmap: `docs/roadmaps/g11/001-production-host-assembly-wiring.md`
+Product boundary: [Contract 072](../contracts/072-real-plugin-hosting-discovery-and-sandbox-execution-contract.md)
 Contracts: `072`, `009`, `014`
 
 ## Purpose
@@ -144,9 +144,3 @@ Deferred:
 Landed in `g11.002`. Contract `014` owns semantics. v1 multiplexing map:
 `docs/knowledge/architecture/shared-sandbox-multiplexing.md`. Grouping key is
 `plugin:{plugin_type_id}`. DedicatedSandbox stays the default.
-
-## Next Task
-
-Stop for operator selection of the next Signal-only product pull from triage. Do not start
-a follow-on generation. Use `docs/roadmaps/g11/README.md` as the live front
-door.

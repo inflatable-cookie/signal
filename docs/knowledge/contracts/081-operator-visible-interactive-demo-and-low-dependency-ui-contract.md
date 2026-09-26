@@ -62,8 +62,3 @@ while avoiding a new heavyweight in-repo UI dependency stack.
 - building a downstream DAW-like product shell inside Signal
 - replacing acceptance tests with manual demo workflows
 - requiring one uniform UI modality across all crate families
-
-## Next Task
-
-Use this contract as the benchmark if a future generation proposes additional
-operator-visible demo work beyond the closed `g09.015` lane.

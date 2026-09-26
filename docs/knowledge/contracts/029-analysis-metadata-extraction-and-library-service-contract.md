@@ -233,9 +233,3 @@ Batch 18.3 closes the bounded consumer-facing proof seam for this contract:
 - this contract is therefore closed as the first reusable analysis-metadata and
   library-service boundary, while richer rhythm, tonal, embedding, and
   product-local browse or recommendation breadth remain deferred
-
-## Next Task
-
-Continue `g06.019` with Batch 19.1 by freezing the shared fault-injection
-harness and multi-backend acceptance contract, separating required integrated
-acceptance evidence from optional longer-running soak depth.

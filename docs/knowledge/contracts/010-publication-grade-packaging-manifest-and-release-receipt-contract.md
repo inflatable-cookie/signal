@@ -183,9 +183,3 @@ The current repo-owned baseline that this contract builds on is:
 - `effigy acceptance:release-boundary`
 - `effigy acceptance:packaging-manifest`
 - `effigy acceptance:release-packaging-consumer`
-
-## Next Task
-
-Continue `g05.005` with Batch 5.1 by defining the combined `g05`
-generation-closeout descriptor and task without weakening the packaging
-manifest or release-receipt boundary.

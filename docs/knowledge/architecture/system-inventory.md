@@ -142,8 +142,3 @@ roots are explicit configuration defaulting empty.
 - product-local UI shells, browser workflows, controller-page UX, and release
   packaging remain outside this inventory unless they are promoted into shared
   Signal-owned substrate
-
-## Next Task
-
-Keep inventory aligned with `docs/roadmaps/g11/README.md`. `g11` has no ready
-task; do not execute closed tasks from history.

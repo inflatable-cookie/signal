@@ -124,12 +124,3 @@ implementation opens.
 | [`sms.cpp`](https://github.com/claytonotey/libsbsms/blob/e99cd7e6c6367e476577be34d2fdbe2023904d7e/src/sms.cpp) | SHA-256 `b6b371a2314c8723980a47b69a418272eb8c5052da7f0b151e9e1e9d3202fd4f` | peak, track, stereo-match, and phase coordination |
 | [`track.cpp`](https://github.com/claytonotey/libsbsms/blob/e99cd7e6c6367e476577be34d2fdbe2023904d7e/src/track.cpp) | SHA-256 `83e3aa29b062ba9ec78c0e56d6bed3a8bfe6022d328f96085a0903084ce19bda` | direct oscillator and paired trajectory synthesis |
 | [`subband.cpp`](https://github.com/claytonotey/libsbsms/blob/e99cd7e6c6367e476577be34d2fdbe2023904d7e/src/subband.cpp) | SHA-256 `a803d764d008a756d0bb1cd6e1b25ad3bc015567cadc4ceca09d894a1ad4d896` | recursive subband pipeline and output sum |
-
-## Next Task
-
-Retain this dossier as causal evidence. Batch 29.7AI proves the old local and
-polarity/gain vetoes invalid, but SBSMS remains closed on genuine structural
-mechanics, mono quality, long-development quality, and bounded state. Batch
-Batch 29.7AJ completes the shared-decision study and does not reopen SBSMS.
-Batch 29.7AK runs the separately selected guided frequency-partitioned linked-
-phase proof under Rule 31R.

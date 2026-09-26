@@ -225,9 +225,3 @@ Batch 12.3 closes the first generic-event consumer proof surface:
   proof surface without adapter crate internals
 - later preset-state, portable recall, and ARA-context work can build on one
   closed generic event baseline instead of reopening shared event ownership
-
-## Next Task
-
-Continue `g06.013` with Batch 13.1 by freezing plugin preset-state
-interchange, portable recall, and ARA-capable context vocabulary before
-runtime recall/export depth begins.

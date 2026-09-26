@@ -215,9 +215,3 @@ boundary instead of only a widened internal receipt family:
 
 This contract is now closed as the reusable base for later sidechain,
 multi-bus, spatial, Linux, and complex plugin-I/O work.
-
-## Next Task
-
-Continue `g07.002` with Batch 2.2 by materializing runtime-owned sidechain
-source, target, attachment-policy, and fallback receipts across live and
-offline routing surfaces without reopening host-local routing ownership.

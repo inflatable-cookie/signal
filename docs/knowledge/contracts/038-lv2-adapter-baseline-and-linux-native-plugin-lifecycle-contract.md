@@ -222,9 +222,3 @@ Batch 7.3 closes the bounded LV2 proof seam:
   acceptance lane for the LV2 boundary
 
 The first bounded LV2 adapter baseline is now closed.
-
-## Next Task
-
-Continue `g07.008` with Batch 8.2 by aligning lifecycle, render, failure, and
-placement receipts across Linux adapters so supervisor export and stable
-host-edge surfaces stay on one Linux plugin vocabulary.

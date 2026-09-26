@@ -268,9 +268,3 @@ This contract is now complete for its bounded goal:
 - stable host-edge and supervisor proof now converge on the same bounded seam
 - renderer-capability negotiation, immersive export packaging, and deeper
   renderer-backed monitoring breadth remain explicitly later `g08` work
-
-## Next Task
-
-Continue `g08.008` with Batch 8.1 by freezing the first runtime-owned
-renderer-capability negotiation and immersive export contract on top of the
-closed deployment, fold-down, and monitoring-scene seam.

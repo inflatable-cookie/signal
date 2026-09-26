@@ -20,7 +20,7 @@ offline-only, native-channel, and Signal-owned. It combines:
 
 This replaces the rejected `SourceAnchoredMultiresolutionPhaseField` brief.
 The Batch 30.3 failure remains in
-`docs/logs/2026-07/19-g10-030-stretch-candidate-rejection.md` and Git history.
+the `19-g10-030-stretch-candidate-rejection.md` record in Git history.
 No part of that implementation survives as code or hidden review surface.
 
 The architecture uses public specimens only for broad structure: simultaneous
@@ -480,10 +480,3 @@ fallback for unsupported ratios and unreviewed dynamic/pitch paths.
   offline targets despite bounded execution
 
 These are whole-renderer risks. The fixed gates judge them together.
-
-## Next Task
-
-The architecture checkpoint closed on the competitive frozen baseline after
-`offline-time-stretch-non-phase-vocoder-feasibility.md` found no qualifying
-different-family candidate. Do not modify this rejected brief or start another
-phase-vocoder variant.

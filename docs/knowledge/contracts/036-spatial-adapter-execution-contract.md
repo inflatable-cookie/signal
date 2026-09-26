@@ -274,10 +274,3 @@ This means the first spatial baseline is now consumable through one shared
 runtime-owned vocabulary for active versus bypassed execution, target
 environment, and explicit fallback outcome, without host-local speaker
 heuristics or adapter-local reinterpretation.
-
-## Next Task
-
-Continue `g07.006` with Batch 6.2 by materializing runtime-owned surround-bed,
-object-role, mix-policy, render-scope, and expanded-fallback receipts across
-execution, render, and observation surfaces without reopening host-local or
-renderer-local spatial ownership.

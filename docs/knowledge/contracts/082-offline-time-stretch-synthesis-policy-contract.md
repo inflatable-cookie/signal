@@ -75,8 +75,3 @@ Contract `084` replaces the Rule 31 sequence with:
 - fixed structural, long-form mono, and linked-stereo admission order
 - deletion of failed scaffolding
 - reassessment after repeated failure classes
-
-## Next Task
-
-Do not continue historical Rule 31 or Batch 29.7BE. Use Contract `084` and
-`g10.030`.

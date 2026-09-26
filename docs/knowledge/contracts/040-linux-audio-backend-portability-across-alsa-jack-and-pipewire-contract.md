@@ -252,10 +252,3 @@ portability:
 This contract is now closed for the bounded backend portability question. Live
 backend-native clocking, duplex, and endpoint-topology parity remains the next
 Linux queue rather than hidden scope inside this contract.
-
-## Next Task
-
-Continue `g07.010` with Batch 10.3 by adding focused proofs that the widened
-Linux backend clocking, duplex, and endpoint-topology parity receipts remain
-consumable through shared runtime, supervisor, and stable host-edge surfaces
-without backend-private Linux capability matrices.

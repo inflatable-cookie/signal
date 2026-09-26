@@ -430,10 +430,3 @@ relation, excitation, window, coefficient, smoothing, seed, or scalar variant.
 
 - [PaulXStretch official repository](https://github.com/essej/paulxstretch)
 - [Moliner et al., Noise Morphing for Audio Time Stretching](https://www.pure.ed.ac.uk/ws/portalfiles/portal/428590250/2024_NoiseMorphing_SPL_Moliner.pdf)
-
-## Next Task
-
-No implementation follows this brief. Both later cyclic candidates also failed
-and final ownership reassessment closed explicit `Cyclic`. Do not repair this
-relation proof, reopen a diffusive variant, tune either cyclic candidate, or
-begin Cloud, routing, or product implementation.

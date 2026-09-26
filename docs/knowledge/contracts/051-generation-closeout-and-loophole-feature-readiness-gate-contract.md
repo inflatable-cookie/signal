@@ -272,9 +272,3 @@ Batch 20.3 closes `g07` with one explicit repo-owned verdict:
 
 This completes the bounded `g07` closeout contract. The verdict remains a
 reusable Signal substrate verdict, not a Loophole product-launch verdict.
-
-## Next Task
-
-Continue `g08.001` with Batch 1.1 by freezing the runtime-owned live Linux
-audio backend ownership and session-lifecycle contract before deeper ALSA,
-JACK, and PipeWire runtime realization widens.

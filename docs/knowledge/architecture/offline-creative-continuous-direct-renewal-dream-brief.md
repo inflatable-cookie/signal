@@ -571,9 +571,3 @@ Commit `73910aad` admits only the private target predicate, internal
 regression owners. The admitted acoustic files remain unchanged. Candidate
 evidence, comparators, receipts, audio, and the nextest profile did not enter
 `main`.
-
-## Next Task
-
-Keep this owner and its full public `4x..16x` range frozen. Open continuous
-Cyclic feasibility as the next docs-first planning checkpoint; do not widen
-Dream or start implementation.

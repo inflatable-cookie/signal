@@ -314,9 +314,3 @@ Batch 6.3 closes the first bounded timing boundary as a consumer-facing seam:
 - host callback cadence remains advisory evidence; `g06.007` is now the next
   place where richer hot-node and worker-lane attribution can widen the timing
   story without changing its authority
-
-## Next Task
-
-Continue `g06.007` with Batch 7.1 by freezing graph critical-path, hot-node,
-and worker-lane instrumentation semantics on top of the closed per-block timing
-boundary before deeper scheduler attribution lands.

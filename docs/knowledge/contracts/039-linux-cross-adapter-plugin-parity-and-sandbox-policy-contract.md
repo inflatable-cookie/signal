@@ -268,9 +268,3 @@ Batch 8.3 closes the downstream Linux parity proof seam:
 This closes the bounded Linux plugin parity and sandbox-policy contract while
 leaving Linux hardware backend portability, richer extension depth, and later
 backend clocking work to subsequent `g07` milestones
-
-## Next Task
-
-Continue `g07.009` with Batch 9.1 by freezing the runtime-owned Linux audio
-backend portability contract across ALSA, JACK, and PipeWire on top of the
-now-closed Linux plugin parity and sandbox-policy boundary.

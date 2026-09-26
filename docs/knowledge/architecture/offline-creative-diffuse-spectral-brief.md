@@ -463,8 +463,3 @@ mode, or hidden API moves to `main`.
 Two complete `DiffuseSpectral` candidates failing for the same dominant cause
 trigger architecture reassessment. They do not authorize window, coefficient,
 phase, smoothing, seed, or scalar sweeps.
-
-## Next Task
-
-Use `offline-creative-continuous-excitation-spectral-brief.md` as the sole
-current candidate authority. Do not tune or reimplement this historical brief.

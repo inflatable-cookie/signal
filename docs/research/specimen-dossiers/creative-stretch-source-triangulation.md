@@ -275,7 +275,7 @@ This removes deterministic blend-position energy modulation. It does not
 bound stochastic waveform peaks.
 
 The complete clean-room decision is frozen in
-[Offline Creative CompensatedRenewalSpectral Renderer Brief](../../architecture/offline-creative-compensated-renewal-spectral-brief.md).
+[Offline Creative CompensatedRenewalSpectral Renderer Brief](../../knowledge/architecture/offline-creative-compensated-renewal-spectral-brief.md).
 No upstream constant, threshold, random generator, or control flow transfers.
 
 Primary evidence:
@@ -417,7 +417,7 @@ Signal and PaulX but is diagnostic.
 This policy reopens one fresh documented candidate, not the deleted checkpoint
 and not a stereo repair experiment. The renderer remains the tested linked
 native-channel renewal law. Its complete fresh authority is
-[ComparatorAuditedRenewalSpectral](../../architecture/offline-creative-comparator-audited-renewal-spectral-brief.md).
+[ComparatorAuditedRenewalSpectral](../../knowledge/architecture/offline-creative-comparator-audited-renewal-spectral-brief.md).
 
 Batch 31.39 implemented that authority once from fresh source. Construction
 and structural admission passed, but synthetic `Y04` failed one `16x` replica
@@ -577,11 +577,11 @@ and entry/tail differences. Reopening therefore requires an evidence-backed
 product-gate change, not a renamed new algorithm or recovered candidate.
 
 The architecture decision is
-[Offline Creative Direct-Renewal Owner Study](../../architecture/offline-creative-direct-renewal-owner-study.md).
+[Offline Creative Direct-Renewal Owner Study](../../knowledge/architecture/offline-creative-direct-renewal-owner-study.md).
 
 Batch 31.65 records the operator-authorized reset and freezes one complete
 candidate authority:
-[Offline Creative DirectRenewalDream Renderer Brief](../../architecture/offline-creative-direct-renewal-dream-brief.md).
+[Offline Creative DirectRenewalDream Renderer Brief](../../knowledge/architecture/offline-creative-direct-renewal-dream-brief.md).
 
 ## Batch 31.69 LayeredCloud Decision
 
@@ -603,7 +603,7 @@ grain primitives, image inversion, and neural synthesis do not add a complete
 bounded linked-stereo renderer.
 
 The selected owner was frozen in
-[Offline Creative AuditedLayeredCloud Renderer Brief](../../architecture/offline-creative-audited-layered-cloud-brief.md).
+[Offline Creative AuditedLayeredCloud Renderer Brief](../../knowledge/architecture/offline-creative-audited-layered-cloud-brief.md).
 The fresh implementation compiled and passed construction, then stopped before
 structural admission because the frozen occupancy result was unreachable. The
 second evidence-integrity failure closes the pointer-led Cloud family without
@@ -611,7 +611,7 @@ an acoustic judgment.
 
 The closed original brief and Batch 31.71 gap ledger remain historical
 evidence in
-[Offline Creative LayeredCloud Renderer Brief](../../architecture/offline-creative-layered-cloud-brief.md).
+[Offline Creative LayeredCloud Renderer Brief](../../knowledge/architecture/offline-creative-layered-cloud-brief.md).
 Batch 31.72 re-froze the same sound architecture under source-clean identity
 with compile-linked source/vector hashes, per-row timeouts and receipts, full
 synthetic diagnostics, and executable comparator/listening ownership.
@@ -623,9 +623,3 @@ Primary source audit:
 - [pinned Csound implementation](https://github.com/csound/csound/blob/0eaa07e3aee55f90e745f89294ddb52eec30345c/Opcodes/sndwarp.c)
 - [SuperCollider `Warp1` manual](https://docs.supercollider.online/Classes/Warp1.html)
 - [pinned SuperCollider implementation](https://github.com/supercollider/supercollider/blob/2f0803bcd2e551564e3fef8d5075816cbb685cd4/server/plugins/GrainUGens.cpp)
-
-## Next Task
-
-Current executable coverage is public exact `4x`, `8x`, and `16x` neutral
-`Dream`; the broader range is deferred. No research or renderer reopening is
-authorized without a materially different source-backed owner.

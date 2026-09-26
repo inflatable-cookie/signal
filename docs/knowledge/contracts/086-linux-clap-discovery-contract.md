@@ -7,7 +7,7 @@ Related contracts: `docs/knowledge/contracts/022-backend-capability-parity-linux
 `docs/knowledge/contracts/072-real-plugin-hosting-discovery-and-sandbox-execution-contract.md`,
 `docs/knowledge/contracts/083-vst3-discovery-diagnostic-outcome-contract.md`
 Consumer evidence: Soundcheck contract 030; Soundcheck
-`docs/logs/2026-08/21-linux-scan-contract.md`
+the `21-linux-scan-contract.md` record in Git history
 
 ## Purpose
 

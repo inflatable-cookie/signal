@@ -319,9 +319,3 @@ This completed contract intentionally defers:
 
 Those areas belong to later `g06` milestones, but they should now build on
 this shared vocabulary rather than replacing it.
-
-## Next Task
-
-Continue `g06.004` with Batch 4.1 by freezing the offline-render recovery and
-resumability contract on top of the shared interruption vocabulary before
-later runtime session-depth work widens render checkpoint and artifact truth.

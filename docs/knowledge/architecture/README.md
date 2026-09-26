@@ -16,9 +16,8 @@ Current headline state: the realtime render path, DSP kernels, analysis, graph,
 and runtime crates are live under `crates/`; CLAP, VST3, AU, and LV2 hosting
 is implemented through `signal-plugin-bridge` with production host-assembly
 wiring in `signal-host-local` (`g11.001`). SharedSandbox multiplexing landed
-in `g11.002`. The stretch headline is covered in
-roadmaps — the transparent renderer is frozen and
-corrected through `g10.042`, and exact-ratio creative stretch (`Dream`,
+in `g11.002`. The [stretch synthesis](offline-time-stretch-synthesis.md)
+covers the frozen transparent renderer. Exact-ratio creative stretch (`Dream`,
 `Cyclic`) is publicly admitted.
 
 ## Why this section matters now
@@ -35,7 +34,7 @@ Use this section for:
 - trust-edge adapter boundaries
 - generic library invariants
 
-Keep generation task sequencing in `roadmaps/`.
+Keep future work in [the plan](../../plan.md); Queue owns task sequencing.
 
 ## Active Entry Points
 
@@ -53,10 +52,3 @@ Keep generation task sequencing in `roadmaps/`.
   briefs under this directory (admitted and rejected candidates alike —
   rejected briefs are retained as evidence)
 - related contracts under `docs/knowledge/contracts/`
-
-## Next Task
-
-Stop for operator selection of the next Signal-only product pull from triage. Do not start
-a follow-on generation. `g11.001` and `g11.002` are complete. Keep the `g10`
-stretch state closed. Linux CLAP filesystem discovery (`086`) shipped
-2026-08-21. Do not open `g12`.

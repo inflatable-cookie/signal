@@ -52,8 +52,3 @@ updated here first.
    implementation-facing algorithm notes.
 4. Update architecture or roadmap docs only when the research result is stable
    enough to constrain delivery.
-
-## Next task
-
-Promote the migrated crate-shape and algorithm findings into explicit package
-and runtime-host naming decisions for the first Signal implementation batch.

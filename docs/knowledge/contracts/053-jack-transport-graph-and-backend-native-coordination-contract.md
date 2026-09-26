@@ -240,9 +240,3 @@ Batch 2.3 closes the bounded JACK coordination consumer seam:
 - the closed proof seam stays intentionally bounded: real JACK daemon
   integration, callback-thread ownership, and session-manager depth remain
   deferred
-
-## Next Task
-
-Continue `g08.003` with Batch 3.1 by freezing runtime-owned PipeWire and ALSA
-session-role, device-claim, and stream-policy parity meaning on top of the
-closed live Linux ownership and JACK coordination seams.

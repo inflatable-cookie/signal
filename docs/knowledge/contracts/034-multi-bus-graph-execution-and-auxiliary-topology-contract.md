@@ -239,10 +239,3 @@ The following boundary is now explicit and repo-owned:
 That closes the first bounded consumer seam for this contract and leaves later
 complex plugin-I/O and spatial work building on a proven shared topology
 substrate rather than reopening multi-bus meaning.
-
-## Next Task
-
-Continue `g07.004` with Batch 4.2 by materializing runtime-owned complex
-plugin-I/O, multi-output instrument, and bus-capable FX receipts across
-discovery, execution, render, and stable host-edge surfaces without reopening
-adapter-local pin ownership.

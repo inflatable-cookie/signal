@@ -263,9 +263,3 @@ Batch 16.3 closes the first reusable consumer proof seam for this contract:
 The closed boundary remains intentionally bounded. Richer measurement-session,
 calibration, waveform, and preview-service workflows are still deferred to
 later work built on top of this shared receipt family.
-
-## Next Task
-
-Continue `g06.018` with Batch 18.1 by freezing the first reusable
-analysis-metadata and library-service descriptor family on top of the closed
-media-service boundary.

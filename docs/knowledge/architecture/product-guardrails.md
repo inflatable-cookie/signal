@@ -39,9 +39,3 @@ host-local duplication, or unsafe shortcuts.
 - host duplication is being preserved for convenience rather than because the
   environment boundary is genuinely different
 - the change would push unsafe or unbounded work into realtime-sensitive paths
-
-## Next Task
-
-Use these guardrails with the active generation front door and
-`docs/roadmaps/strategic-runway.md` so new tasks stay focused on real
-runtime and host behavior rather than scaffolded or downstream-app scope.

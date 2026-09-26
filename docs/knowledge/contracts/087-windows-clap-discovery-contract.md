@@ -6,7 +6,7 @@ Updated: 2026-08-22
 Related contracts: `docs/knowledge/contracts/086-linux-clap-discovery-contract.md`,
 `docs/knowledge/contracts/083-vst3-discovery-diagnostic-outcome-contract.md`
 Consumer evidence: Soundcheck contract 031; Soundcheck
-`docs/logs/2026-08/22-windows-scan-lane.md`
+the `22-windows-scan-lane.md` record in Git history
 
 ## Purpose
 

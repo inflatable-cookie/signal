@@ -351,9 +351,3 @@ signal/
 
 This keeps the repository root reserved for repo-level concerns such as docs,
 top-level build surfaces, and workspace manifests.
-
-## Next Task
-
-Decide whether the payload-only debug policy is now sufficiently frozen to
-leave this export boundary alone for a while, or whether there is a concrete
-inspection need strong enough to justify a second explicit debug section.

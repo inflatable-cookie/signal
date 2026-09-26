@@ -170,12 +170,5 @@ new source-backed joint-synthesis law, not a parameter change to this memo.
 - [Dorran, Lawlor, and Coyle, Multi-Channel Audio Time-Scale Modification](https://mural.maynoothuniversity.ie/id/eprint/8793/1/BL-Multi-channel-2005.pdf)
 - [Signalsmith Stretch, pinned relationship-preserving recurrence](https://github.com/Signalsmith-Audio/signalsmith-stretch/blob/57b93f4e9206a089a45387eaa39bdc9f310d3308/signalsmith-stretch.h)
 - [Holighaus et al., A Framework for Invertible, Real-Time Constant-Q Transforms](https://arxiv.org/abs/1210.0084)
-- [Signal Batch 29.7Y evidence](../../logs/2026-07/18-g10-029-frequency-adaptive-material-phase-proof.md)
+- Signal Batch 29.7Y evidence (`18-g10-029-frequency-adaptive-material-phase-proof.md` in Git history)
 - [Signal linked-stereo recurrence memo](./006-linked-stereo-recurrence.md)
-
-## Next Task
-
-Batch 29.7AB completes this reassessment in memo 015. Modified redundant fields
-do not generally satisfy `A D C = C`; inner atom synthesis is the first causal
-sum. Run Batch 29.7AC as a no-renderer paired-channel consistency-operator
-study before authorizing any new DSP family.

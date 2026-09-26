@@ -243,9 +243,3 @@ Rejected first-owner brief:
 | --- | --- | --- |
 | Finch | Wrapper, review UX, sidecar/output integration | Source Hub 002 and the relevant value track |
 | Loophole | Runtime host and authority integration | Source Hub 002 and architecture/system docs |
-
-## Next Task
-
-Execute `g10.032` Batch 32.19 only. Implement the frozen event-ledger
-authority in its exact isolated worktree and complete both unchanged
-conformance rounds. Stop before `Y01`.

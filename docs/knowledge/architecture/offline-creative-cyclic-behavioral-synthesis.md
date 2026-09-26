@@ -268,9 +268,3 @@ cleanup, and gate order are complete. No implementation entered `main`.
 
 These risks remain unmeasured. They are not reasons to reopen the closed
 identity or another mechanism survey.
-
-## Next Task
-
-Execute `g10.032` Batch 32.19 only. Implement the frozen authority in its
-fresh isolated worktree and complete both unchanged conformance rounds. Stop
-before `Y01`.

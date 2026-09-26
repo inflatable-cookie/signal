@@ -299,9 +299,3 @@ Batch 13.3 closes the bounded portable recall consumer proof surface:
 - later device-supervision and hardware recovery work can now build on one
   closed preset-state interchange and portable recall baseline instead of
   reopening portability ownership
-
-## Next Task
-
-Continue `g06.014` with Batch 14.1 by freezing the runtime-owned device
-supervision, restart-state machine, exhaustion, and fault-boundary contract
-before deeper hardware recovery depth begins.

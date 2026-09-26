@@ -317,9 +317,3 @@ Batch 19.3 turns the grouped lane into a true integrated-evidence surface:
 - this closes the bounded integrated acceptance contract for `g06` and hands
   the next queue to `g06.020`, where the remaining problem becomes long-session
   soak, promotion policy, and Loophole-facing closeout depth
-
-## Next Task
-
-Continue `g06.020` with Batch 20.1 by freezing the bounded long-session soak,
-promotion-gate, and Loophole-readiness policy on top of the now-closed
-integrated acceptance lane.

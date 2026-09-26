@@ -410,10 +410,3 @@ and host tooling consume a stable contract instead of scraping ad hoc output.
 - `RuntimeSupervisorReport` exposes automation continuity directly through
   `RuntimeAutomationSnapshot`.
 - Docs point to this contract when describing supervisor export behavior.
-
-## Next Task
-
-Harden lingering-session race handling around late detach completion, especially
-when a previously faulted origin teardown resolves after a fresh replacement
-attach and the host needs to fold that completion back into runtime admission
-without disturbing the active replacement session.

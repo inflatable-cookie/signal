@@ -34,8 +34,3 @@ panic-sensitive state logic into a resilient, inspectable policy system.
 - corpus regressions for tempo and meter continuity
 - targeted failure-injection tests for worker panic and partial-feature loss
 - interactive rhythm demo coverage under contract `079`
-
-## Next Task
-
-Use this contract as the closed rhythm authority carried forward from the
-completed `g09.010` lane.

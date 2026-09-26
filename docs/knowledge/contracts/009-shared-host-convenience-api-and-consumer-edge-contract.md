@@ -196,9 +196,3 @@ rather than private host internals:
 - `crates/signal-host-local/tests/public_host_edge_boundary.rs`
 - `crates/signal-host-server/tests/public_host_edge_boundary.rs`
 - `effigy acceptance:host-edge-consumer`
-
-## Next Task
-
-Continue `g05.005` with Batch 5.1 by defining the combined `g05`
-generation-closeout descriptor and task without promoting unstable host
-helpers into the widened shared boundary.

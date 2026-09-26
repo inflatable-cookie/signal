@@ -187,8 +187,3 @@ surfaces listed above remain outside this stability promise.
 For the remainder of `g04.001`, new stability promises should extend this
 boundary only by explicit contract or roadmap note. Consumer convenience alone
 is not enough to widen the public freeze.
-
-## Next Task
-
-Keep this boundary stable while `g04.002` deepens multicore scheduling and
-anticipative execution on top of the now-explicit public/runtime contract.

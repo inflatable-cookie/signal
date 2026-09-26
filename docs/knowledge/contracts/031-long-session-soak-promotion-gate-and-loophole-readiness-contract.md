@@ -290,9 +290,3 @@ That verdict is grounded in the closeout descriptor rather than prose:
 
 This contract therefore closes with the policy, runnable gate, and final
 readiness decision all aligned to the same repo-owned surfaces.
-
-## Next Task
-
-Continue `g07.001` with Batch 1.1 by freezing the canonical multichannel
-layout and channel-role contract before widening sidechain, spatial, Linux, or
-time-stretch implementation depth.

@@ -437,9 +437,3 @@ window, coefficient, smoothing, seed, or scalar sweeps.
 
 - [PaulXStretch official repository](https://github.com/essej/paulxstretch)
 - [Moliner et al., Noise Morphing for Audio Time Stretching](https://www.pure.ed.ac.uk/ws/portalfiles/portal/428590250/2024_NoiseMorphing_SPL_Moliner.pdf)
-
-## Next Task
-
-Use `offline-creative-continuous-excitation-complex-relation-brief.md` as the
-sole current candidate authority. Do not repair or reimplement this historical
-brief.

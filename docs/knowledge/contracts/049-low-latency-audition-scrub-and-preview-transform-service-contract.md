@@ -259,9 +259,3 @@ Batch 18.3 closes the bounded consumer seam for the preview-transform service:
 - `g07.018` is therefore closed as a bounded reusable Signal seam, while
   fuller low-latency execution, preview-device routing, and browser workflow
   depth remain later work
-
-## Next Task
-
-Continue `g08.001` with Batch 1.1 by freezing the runtime-owned live Linux
-audio backend ownership and session-lifecycle contract before deeper ALSA,
-JACK, and PipeWire runtime realization widens.

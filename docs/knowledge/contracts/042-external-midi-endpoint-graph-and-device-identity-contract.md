@@ -236,9 +236,3 @@ That completes the bounded `g07.011` contract depth. Richer MIDI 2.0, MPE,
 controller-expression, and later control-surface transport work must now widen
 from this closed external MIDI endpoint baseline rather than reopening device
 identity ownership.
-
-## Next Task
-
-Continue `g07.012` with Batch 12.1 by freezing the widened MIDI 2.0, MPE, and
-richer controller-expression contract on top of the now-closed external MIDI
-endpoint graph and generic event boundaries.

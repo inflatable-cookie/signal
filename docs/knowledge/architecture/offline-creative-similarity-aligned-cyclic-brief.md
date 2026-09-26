@@ -564,9 +564,3 @@ promotion.
 - [SoundTouch algorithm notes](https://soundtouch.surina.net/README.html)
 - [SoundTouch source, studied revision `f738b113`](https://codeberg.org/soundtouch/soundtouch/commit/f738b1132ec1fd56efc90367898244cf52d9e6a5)
 - [REAPER](https://www.reaper.fm/)
-
-## Next Task
-
-No implementation follows this brief. Explicit `Cyclic` is closed. Reopen only
-from new complete-system owner evidence or an explicit operator decision for a
-separate creative research program.

@@ -243,7 +243,6 @@ may only become `CallbackSafeStreaming`/`SourceProjected` after focused tests
 prove source advance, output position, bounded input demand, underrun/fill
 policy, latency, and no-allocation behavior together.
 
-Planning authority: `docs/roadmaps/archive/g10.md`.
 
 ## 2026-08-05 RealtimePreview Callback Gate Satisfied
 
@@ -400,8 +399,6 @@ separable by those measurements, tail-envelope promotion stops and the boundary
 remains unmodified pending a different algorithm class. Any selector must later
 share its decision across linked stereo.
 
-Planning authority:
-`docs/roadmaps/archive/g10.md`.
 
 ## Historical 2026-07-10 OfflineHighQuality Structural Hybrid Addendum
 
@@ -449,7 +446,7 @@ product receipts, and RealtimePreview support remain unchanged until the full
 contract gates pass.
 
 Detailed design and stop conditions:
-`docs/logs/2026-07/10-g10-029-structural-hybrid-design.md`.
+`10-g10-029-structural-hybrid-design.md` (Git history).
 
 The independent-output hybrid and its successors were rejected and removed in
 the 2026-07-19 consolidation. Contract `082` preserves that proof history.
@@ -508,9 +505,8 @@ no runtime or public Rust surface until separately promoted.
 
 ## 2026-07-27 Transparent Renderer Defect Correction Addendum
 
-Planning authority: `docs/roadmaps/archive/g10.md`.
-Evidence: `docs/logs/2026-07/27-g10-036-stretch-audit-intake.md`,
-`docs/logs/2026-07/27-g10-036-defect-authority.md`.
+Evidence: `27-g10-036-stretch-audit-intake.md` (Git history),
+`27-g10-036-defect-authority.md` (Git history).
 
 The 2026-07-27 audit measured four defects in the retained Transparent
 renderer. This addendum freezes the laws they violate. It corrects defects in
@@ -683,8 +679,7 @@ Under the measured overlap law the audible window is narrow. The classes are:
 
 ## 2026-07-27 Stretch Cache Identity Addendum
 
-Planning authority: `docs/roadmaps/archive/g10.md`.
-Evidence: `docs/logs/2026-07/27-g10-037-identity-gap-audit.md`.
+Evidence: `27-g10-037-identity-gap-audit.md` (Git history).
 
 The 2026-07-19 promotion evidence list named the cache identity fields as
 "engine version, tier, content hash, ratio/pitch curves, warp markers, channel
@@ -769,8 +764,7 @@ holds.
 
 ## 2026-07-27 Resumable Offline Render Addendum
 
-Planning authority: `docs/roadmaps/archive/g10.md`.
-Evidence: `docs/logs/2026-07/27-g10-039-state-boundary-audit.md`.
+Evidence: `27-g10-039-state-boundary-audit.md` (Git history).
 
 ### Renderer state that resets at every boundary
 
@@ -867,12 +861,3 @@ remains the bounded-memory authority and stops being a segmentation authority.
 Seam mechanism. Once state is carried, the boundary smoother and the render-
 plane chunk crossfade are removed rather than retained. If either is still
 needed, the state is not actually being carried and the work is incomplete.
-
-## Next Task
-
-Execute `g10.037` Batch 37.2: explicit stable tokens, render geometry, chunk
-policy, behavior version, and the schema advance. Keep the existing tier
-behavior frozen apart from the defect corrections these addenda authorize.
-Contract `085` has no admitted creative owner after `g10.031` closed explicit
-`Cyclic`; no creative implementation may change this public tier surface
-without new authority.

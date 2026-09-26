@@ -85,9 +85,3 @@ so those decisions do not drift milestone by milestone.
   - plugin API precision
   - file import/export bit depth
   - hardware endpoint sample format
-
-## Next Task
-
-Freeze the first explicit import/export precision matrix once Signal opens the
-next media-interchange or adapter-capability tranche, so integer PCM export and
-future plugin double-precision negotiation inherit one stable policy.

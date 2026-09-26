@@ -40,8 +40,3 @@ promoting shared behavior into runtime-owned or host-support-owned substrate.
 - paired local/server conformance tests over the same scenarios
 - duplicate-block scan reduction evidence
 - one interactive local-vs-server continuity demo under contract `079`
-
-## Next Task
-
-Use this contract to drive the `g09` host/runtime unification milestone before
-adding more host-specific recovery depth.

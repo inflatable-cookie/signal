@@ -225,9 +225,3 @@ transform-artifact contract:
 This closes the bounded `g07.017` contract seam while keeping fuller cache
 retention, low-latency audition, and richer storage-policy depth explicitly
 deferred.
-
-## Next Task
-
-Continue `g08.001` with Batch 1.1 by freezing the runtime-owned live Linux
-audio backend ownership and session-lifecycle contract before deeper ALSA,
-JACK, and PipeWire runtime realization widens.

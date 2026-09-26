@@ -217,9 +217,3 @@ Batch 17.3 closes the bounded media-service consumer seam:
 
 This contract is now closed enough for later metadata and library-service
 depth to build on it instead of reopening media readiness ownership.
-
-## Next Task
-
-Continue `g06.018` with Batch 18.1 by freezing the first reusable
-analysis-metadata and library-service descriptor family on top of this closed
-media-service boundary.

@@ -179,11 +179,6 @@ ratio and exact target length. They are additive source components, not
 full-band alternatives, so their sample-aligned sum does not reopen the
 rejected ownership crossfade.
 
-## Next Task
-
-Freeze Rényi selector-failure attribution. Do not change the selector or
-implement phase or stretched synthesis.
-
 ## Frequency-Adaptive Reassessment
 
 Exact lattice removed source-map drift without closing attack placement,

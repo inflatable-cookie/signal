@@ -222,9 +222,3 @@ Batch 2.3 closes the first public sidechain consumer boundary:
 This closes the bounded sidechain milestone while still deferring broader
 multi-bus, complex plugin-I/O, and spatial routing breadth to later `g07`
 work.
-
-## Next Task
-
-Continue `g07.003` with Batch 3.1 by freezing the runtime-owned multi-bus
-graph execution and auxiliary-topology contract on top of the now-closed
-multichannel and sidechain routing boundaries.

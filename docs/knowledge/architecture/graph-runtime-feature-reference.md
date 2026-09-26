@@ -1867,13 +1867,6 @@ Useful implementation entry points after this doc:
 - runtime receipts, supervisor proof, and stable host-edge export remain
   explicitly deferred until later `g08.010` batches
 
-## Next Task
-
-Continue `g08.013` with Batch 13.3 by proving the widened persistence-policy
-seam through shared runtime, supervisor, and stable host-edge surfaces
-without introducing a browser-local storage ledger or host-local cache-policy
-shell.
-
 ## g08.011 Batch 11.1 Outcome
 
 - `g08` now has a frozen preview-device contract in
@@ -2275,12 +2268,6 @@ shell.
   (roadmap-backlog path retired 2026-09-09; same meaning preserved in triage)
 - `g08` is now complete, and broader repeated-run or environment-matrix depth
   is explicit deferred triage candidacy rather than an implied still-active generation
-
-## Next Task
-
-COMPLETE. `g08` is closed. Promote
-`docs/triage/20260909-retired-backlog-post-g08-environment-matrices.md`
-only when maintainers choose to open the post-`g08` generation.
 
 ## g08.019 Batch 19.3 Outcome
 

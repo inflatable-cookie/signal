@@ -227,9 +227,3 @@ live-MIDI-only acceptance lane:
   `effigy acceptance:external-midi-boundary`, so runtime, supervisor, and
   both stable host edges continue to close on one shared seam without a
   backend-local endpoint policy shell
-
-## Next Task
-
-Continue `g08.015` with Batch 15.1 by freezing the shared cross-backend
-device protocol and live workflow acceptance contract on top of the closed
-live external MIDI ownership seam.

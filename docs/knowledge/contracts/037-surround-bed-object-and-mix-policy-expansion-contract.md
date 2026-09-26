@@ -253,9 +253,3 @@ Batch 6.3 closes the focused public proof seam for that widened substrate:
 
 This contract is now frozen and proven for the bounded richer-spatial seam.
 Later work may widen it, but it should not reopen ownership.
-
-## Next Task
-
-Continue `g07.007` with Batch 7.1 by mapping LV2-specific discovery,
-lifecycle, and Linux-native capability details onto the existing backend-neutral
-plugin contract before runtime-owned LV2 realization widens.

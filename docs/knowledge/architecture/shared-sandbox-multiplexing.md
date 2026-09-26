@@ -3,7 +3,7 @@
 Status: current
 Owner: core-product
 Updated: 2026-08-17
-Roadmap: `docs/roadmaps/g11/002-shared-sandbox-tier.md`
+Product boundary: [Contract 014](../contracts/014-plugin-isolation-policy-transport-rebind-and-shared-sandbox-continuity-contract.md)
 Contracts: `014`, `072`, `009`
 
 ## Purpose
@@ -159,9 +159,3 @@ policy table.
 - replacing DedicatedSandbox as default
 - product browser / trust UX
 - Contract `014` vocabulary changes
-
-## Next Task
-
-Stop for operator selection of the next Signal-only product pull from triage. Do not start
-a follow-on generation from this note. Use `docs/roadmaps/g11/README.md` as
-the live front door.

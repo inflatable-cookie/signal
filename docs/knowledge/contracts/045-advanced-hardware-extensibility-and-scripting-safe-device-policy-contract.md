@@ -217,9 +217,3 @@ Batch 14.3 closes the bounded advanced-hardware proof seam:
 This closes `g07.014` as the bounded advanced-hardware extensibility and
 scripting-safe device-policy contract. Richer vendor protocol, display,
 motor, haptic, and executable scripting depth remain later work.
-
-## Next Task
-
-Continue `g07.015` with Batch 15.1 by freezing the sample-domain
-time-stretch engine contract on top of the closed media, analysis, and
-routing surfaces before runtime stretch realization widens.

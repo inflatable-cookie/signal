@@ -264,9 +264,3 @@ The contract is grounded in implementation that already exists:
 explicitly deferred rather than left ambiguous: multi-member aggregate detail,
 clock drift compensation, and broader backend-matrix coverage still belong to
 later work unless consumers actually need them.
-
-## Next Task
-
-Continue `g04.005` with Batch 5.2 and deepen the typed plugin backend and
-host-neutral delegation surfaces on top of the now-closed runtime, deferred
-work, and hardware portability boundaries.

@@ -281,9 +281,3 @@ This closes `g06.014` intentionally: the supervision substrate is now
 contracted, materialized, and proven strongly enough that later clock drift,
 duplex mismatch, and endpoint-topology work can build on it instead of
 reopening hardware fault ownership.
-
-## Next Task
-
-Continue `g06.015` with Batch 15.1 by freezing the runtime-owned clock-domain
-drift, duplex mismatch, discontinuity, and endpoint-topology contract on top of
-the closed supervision boundary.

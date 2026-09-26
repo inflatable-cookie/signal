@@ -212,12 +212,6 @@ Batch 11.1 freezes the first reusable preview-device contract for Signal:
 - Batch 11.2 can now focus on materializing the first bounded receipt family
   instead of reopening which preview-device semantics belong to Signal
 
-## Next Task
-
-Open `g08.012` with Batch 12.1 by freezing the first runtime-owned preview-
-browser queue, media audition orchestration, and transform-scheduling contract
-on top of the closed preview-device seam.
-
 ## Batch 11.2 outcome
 
 Batch 11.2 materializes the first runtime-owned preview-device receipt family

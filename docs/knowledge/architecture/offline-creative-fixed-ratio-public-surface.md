@@ -621,10 +621,3 @@ stereo output is byte-exact across anchors, interior targets, one-frame
 boundaries, and all three cycle anchors. Dream and both private renderer trees
 remain byte-identical. No router, cache, artifact, dynamic ratio, runtime, UI,
 Loophole, or Chorus surface changed.
-
-## Next Task
-
-No Signal stretch implementation batch is ready. Keep the final explicit
-matrix unchanged and return to the `g10` front door for an operator-selected
-Signal-only planning target. Do not infer a route, integration, or
-RealtimePreview task from this closeout.

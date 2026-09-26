@@ -517,8 +517,3 @@ target remains open.
 - [PaulXStretch pinned magnitude and phase path](https://github.com/essej/paulxstretch/blob/8ec191fdd7203354c79391cbc04c9fd83fa30ea0/Source/PS_Source/Stretch.cpp#L109-L263)
 - [PaulXStretch pinned frame blend and source accumulator](https://github.com/essej/paulxstretch/blob/8ec191fdd7203354c79391cbc04c9fd83fa30ea0/Source/PS_Source/Stretch.cpp#L320-L563)
 - [PaulXStretch pinned output-duration boundary](https://github.com/essej/paulxstretch/blob/8ec191fdd7203354c79391cbc04c9fd83fa30ea0/Source/PS_Source/StretchSource.cpp#L775-L782)
-
-## Next Task
-
-Use the audited successor brief for execution authority. Run `g10.031` Batch
-31.25 only; do not recover this candidate's deleted source or tests.

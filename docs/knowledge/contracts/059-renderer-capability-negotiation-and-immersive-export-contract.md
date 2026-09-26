@@ -274,10 +274,3 @@ This closes the bounded contract meaningfully:
   longer needed to inspect the current fallback surround path
 - deeper renderer-backed execution, vendor export package schemas, and
   publication workflows remain intentionally deferred
-
-## Next Task
-
-Continue `g08.009` with Batch 9.1 by freezing the first runtime-owned advanced
-control-surface display, motor, and haptic transport contract on top of the
-closed controller-expression, control-surface, advanced-hardware, and richer
-workflow seams.

@@ -132,9 +132,3 @@ The deferred risks after `g04.002` are explicit: schedule-stream width is still
 only a bounded proxy for multicore capacity, there is still no true cost-aware
 or work-stealing dispatcher, and long-duration threshold/fail-gate benchmark
 policy remains a later regression concern rather than part of this contract.
-
-## Next Task
-
-Open `g04.003` with Batch 3.1 and define the runtime-owned deferred-work
-contract for render finalization, analysis jobs, delegated merge work, and
-report/materialization services on top of the closed scheduler substrate.

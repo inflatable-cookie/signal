@@ -709,9 +709,3 @@ current owners. Batch 35.8 confirms every worktree, branch, acoustic ref,
 candidate source, nextest profile, tracked evidence path, ignored evidence
 root, generated asset, and build state is absent. No implementation or
 admission batch is ready.
-
-## Next Task
-
-No Automatic task is ready. Preserve this rejected brief as historical
-evidence. Reopen only under the complete-owner or explicit product-boundary
-conditions above.

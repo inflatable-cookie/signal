@@ -293,9 +293,3 @@ Batch 7.3 proves the widened seam stays consumable without private hooks:
 The bounded hot-node, hot-group, critical-path lane, and typed worker-lane
 summary family is therefore closed as a shared runtime, supervisor, and stable
 host-edge consumer boundary.
-
-## Next Task
-
-Continue `g06.008` with Batch 8.1 by freezing deferred-work scheduler
-priority, backpressure, starvation, and cancellation semantics on top of the
-closed timing, hotspot, and orchestration receipt families.

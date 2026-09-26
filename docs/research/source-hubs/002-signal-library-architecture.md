@@ -240,8 +240,3 @@ pub fn analyze_loudness(audio: &AudioBuffer) -> Result<LoudnessAnalysis, Error> 
 | Finch integration | `finch/controller/src/analysis.rs` | Usage examples |
 
 ---
-
-## Next Task
-
-Promote the broader package naming proposal into the roadmap and use it to
-retire the older Finch-shaped crate examples.

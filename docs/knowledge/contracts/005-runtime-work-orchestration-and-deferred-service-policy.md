@@ -238,9 +238,3 @@ This contract is grounded in runtime-owned surfaces that already exist today:
 
 Later `g04.003` work may add explicit orchestration snapshots or queue
 receipts, but it should extend this authority model rather than replacing it.
-
-## Next Task
-
-Continue `g04.004` with Batch 4.2 and implement stronger clock-domain and
-fallback handling in Signal-owned runtime and hardware crates on top of the
-closed scheduler and deferred-work substrate.

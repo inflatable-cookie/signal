@@ -296,9 +296,3 @@ Batch 19.3 closes the bounded integrated `g07` acceptance contract:
   than a descriptor-only wrapper over already-closed milestone seams
 - the remaining Loophole-facing feature-readiness and generation closeout
   verdict now belongs to `g07.020`
-
-## Next Task
-
-Continue `g08.001` with Batch 1.1 by freezing the runtime-owned live Linux
-audio backend ownership and session-lifecycle contract before deeper ALSA,
-JACK, and PipeWire runtime realization widens.

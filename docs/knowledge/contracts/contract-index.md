@@ -159,10 +159,11 @@ memory alone.
 - `084` stretch candidate isolation and promotion
 - `085` creative time-stretch product and routing
 
-## Packaging, conformance, and generation closure
+## Packaging, conformance, and readiness
 
 - `009` shared host convenience API and consumer-edge contract
 - `010` publication-grade packaging manifest and release receipt
+- [Release procedure](release.md) — tagged Git releases, gates, and broker distribution
 - `011` shared downstream conformance and release acceptance automation
 - `030` fault injection harness and multi-backend acceptance
 - `031` long-session soak promotion gate and Loophole readiness
@@ -183,17 +184,11 @@ memory alone.
 - `079` interactive demo binary and crate-capability proof
 - `080` production readiness grade and generation release gate
 - `081` operator-visible interactive demo and low-dependency UI
+- `083` VST3 discovery diagnostic outcomes
+- `086` Linux CLAP discovery
+- `087` Windows CLAP discovery
 
 ## Working Rule
 
-Roadmap tasks should cite the narrowest governing contract family they
-depend on, then add a new contract only when the intended seam is not already
-frozen elsewhere in this index.
-
-## Next Task
-
-Keep Contract `084` closed. Contract `085` admits public continuous
-`4x..16x` Dream through one owner, with no same-character router. Public
-Cyclic remains exact `2x`, `4x`, and `8x`; Cloud remains closed. `g10.034` is
-complete and archived at `docs/roadmaps/archive/g10.md`; do not re-execute
-its batches.
+Queue briefs cite the narrowest governing contract family. Add a new contract
+only when the intended seam is not already frozen elsewhere in this index.

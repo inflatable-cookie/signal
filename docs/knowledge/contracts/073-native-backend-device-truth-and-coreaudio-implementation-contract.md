@@ -43,8 +43,3 @@ starting with CoreAudio.
 - focused CoreAudio enumeration and diagnostics tests
 - stable host-edge proofs over runtime-owned hardware summaries
 - at least one interactive hardware demo path under contract `079`
-
-## Next Task
-
-Use this contract for the `g09` AU/CoreAudio milestone and any later native
-backend realization beyond Linux.

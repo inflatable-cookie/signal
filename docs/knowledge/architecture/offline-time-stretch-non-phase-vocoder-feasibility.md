@@ -130,9 +130,3 @@ Contract `084` is closed without promotion. `g10.030` is complete.
 - [Fierro and Välimäki, Enhanced Fuzzy STN Decomposition](https://arxiv.org/abs/2210.14041)
 - [Fierro et al., Extreme TSM Using Neural Synthesis](https://arxiv.org/abs/2211.16992)
 - [SBSMS project architecture](https://sbsms.sourceforge.net/)
-
-## Next Task
-
-None in the OfflineHighQuality successor lane. Retain the baseline and reopen
-only when a listed whole-system trigger exists. Creative work proceeds
-separately through `g10.031`.

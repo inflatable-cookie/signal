@@ -257,9 +257,3 @@ Batch 1.3 closes the public consumer seam for this contract:
 This closes the bounded `g08.001` ownership proof seam. It does not yet claim
 real ALSA, JACK, or PipeWire daemon coordination depth, transport integration,
 or backend-native recovery behavior.
-
-## Next Task
-
-Continue `g08.002` with Batch 2.2 by materializing the first runtime-owned
-JACK transport, graph, client-role, and guarded-coordination receipt family
-across runtime, supervision, and stable host-edge surfaces.

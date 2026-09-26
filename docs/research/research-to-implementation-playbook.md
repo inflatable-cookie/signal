@@ -63,7 +63,3 @@ Reviewers should check:
 2. Record the gap if the answer is still missing.
 3. Make the provisional decision explicit.
 4. Queue deeper research or prototype work if the risk is material.
-
-## Next Task
-
-Adapt this playbook to the project's actual architecture doc names, review flow, and prototype naming scheme once research starts shaping active delivery.

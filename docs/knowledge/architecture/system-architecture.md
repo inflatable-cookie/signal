@@ -86,7 +86,7 @@ and transport-session concurrency were removed in g10.020.
   be admitted before old transport teardown completes, and runtime owns the
   lingering-session cleanup state machines. The full rules live in
   `docs/knowledge/contracts/002-supervisor-export-schema-and-report-boundary.md` and
-  the g09/g10 logs — this page only records that runtime is the authority.
+  the owning contract — this page records runtime ownership.
 
 ## Performance and Reliability Constraints
 
@@ -98,19 +98,13 @@ and transport-session concurrency were removed in g10.020.
 - Native shims are acceptable where ABI or platform constraints make them
   the lower-risk integration choice.
 
-## Interfaces With Roadmaps
+## Current integration
 
-- `g11` is the active generation. `g10` stretch audit is complete through
-  `g10.042`.
+- The stretch audit is complete; the shipped boundaries are in the stretch
+  architecture and contracts.
 - CLAP, VST3, AU, and LV2 hosting is implemented through adapter crates,
   `signal-plugin-sandbox`, and `signal-plugin-bridge`. `g11.001` wired those
   backends through `signal-host-local`.
 - SharedSandbox multiplexing closed in `g11.002`. Remaining plugin
   integration work is product-pulled workflow depth held as triage candidates in
   `docs/triage/20260909-retired-backlog-post-g10-rebuild-on-demand.md`.
-
-## Next Task
-
-Stop for operator selection of the next Signal-only product pull from triage. Do not start
-a follow-on generation. `g11.001` and `g11.002` are complete. Linux CLAP
-filesystem discovery (`086`) shipped 2026-08-21. Do not open `g12`.

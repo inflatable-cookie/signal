@@ -20,7 +20,3 @@ Last updated:
 | --- | --- | --- | --- |
 
 ## 4) Notes
-
-## Next Task
-
-Promote only items with a concrete problem statement and at least one strong source into source hubs or specimen dossiers.

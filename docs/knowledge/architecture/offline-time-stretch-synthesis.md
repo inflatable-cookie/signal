@@ -115,11 +115,3 @@ The rejected structural hybrid, phase-gradient, H/R/P, frequency-adaptive,
 direct multiscale, material-state, and stereo proof sequence is summarized in
 roadmap `g10.029` and Contract `082`. The full pre-consolidation architecture
 ledger remains in git history at `1d1b02f1`.
-
-## Next Task
-
-Retain this frozen baseline and keep its successor lane closed. No Signal
-stretch implementation batch is ready. Preserve the final explicit stretch
-matrix. Return to the `g10` front door for an explicit operator-selected
-Signal-only planning target without changing this production renderer, public
-APIs, or Contract `084`.

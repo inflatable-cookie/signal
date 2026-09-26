@@ -2461,8 +2461,7 @@ entered `main`.
 
 ## 2026-07-27 Creative Renders Are Uncacheable
 
-Planning authority: `docs/roadmaps/archive/g10.md`.
-Evidence: `docs/logs/2026-07/27-g10-037-creative-cache-decision.md`.
+Evidence: `27-g10-037-creative-cache-decision.md` (Git history).
 
 `g10.037` audited every input that changes rendered output against Signal's
 stretch cache identity. Creative renders have no identity and cannot be
@@ -2505,10 +2504,3 @@ the transparent identity received: every input that changes rendered output,
 checked against the proposed fields, with measured collisions for anything
 omitted. Until then, adding a cache, artifact, or identity surface to creative
 is out of contract.
-
-## Next Task
-
-No Signal stretch implementation batch is ready. Preserve this contract and
-return to the `g10` front door for an explicit operator-selected Signal-only
-planning target. Do not infer Automatic, integration, cache, artifact,
-RealtimePreview, Loophole, or Chorus work.

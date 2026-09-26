@@ -237,9 +237,3 @@ Batch 10.3 closes the first bounded AU consumer seam:
 - the AU baseline is now closed as a shared consumer boundary, while richer AU
   parameter-tree, preset, editor, and event-model depth remain explicitly
   deferred to later cross-adapter work
-
-## Next Task
-
-Continue `g06.011` with Batch 11.1 by freezing the backend capability parity,
-Linux plugin-support, and cross-adapter conformance contract on top of the now
-closed CLAP, VST3, and AU runtime-owned adapter boundaries.

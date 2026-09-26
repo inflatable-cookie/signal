@@ -93,7 +93,7 @@ Use one implementation batch, not a chain of mechanism cards.
 
 Promoted into:
 
-- `docs/architecture/offline-time-stretch-synthesis.md`
+- `docs/knowledge/architecture/offline-time-stretch-synthesis.md`
 - contract `082`, Rule 31
 - roadmap `g10.029`, Batches 29.6CG through 29.6CI
 
@@ -142,15 +142,3 @@ weighted prediction as the selected family.
 | [Rubber Band R3 stretcher](https://github.com/breakfastquay/rubberband/blob/e4296ac80b1170018a110bc326fd0d45a0eb27d6/src/finer/R3Stretcher.cpp) | high | scale ownership and synthesis topology only |
 | [SoundTouch algorithm notes](https://www.surina.net/soundtouch/README.html) | high | WSOLA contrast; not selected |
 | [Elastique SDK](https://licensing.zplane.de/uploads/SDK/ELASTIQUE-PRO/V3/manual/elastique_pro_v3_sdk_documentation.pdf) | medium | behavioural claims only; internals unavailable |
-
-## Next Task
-
-Memo 019 does not reopen this rejected prototype. It selects a different
-complete kernel in which exclusive scale ownership, synchronized all-channel
-phase-state selection, conditional linked trajectories, and per-channel
-synthesis are indivisible. Batch 29.7AK passes fixed mechanics and closes at
-the sample-rate/duration capacity boundary. Batches 29.7AM and 29.7AN validate
-the normalized sliced frame and guided boundary mechanics. Rule 31V now freezes
-the material policy and objective order. Batch 29.7AO rejects at the normalized
-stereo gate; Rule 31W now owns first-divergence attribution. Do not resume this
-memo's implementation or Rule 30AB.

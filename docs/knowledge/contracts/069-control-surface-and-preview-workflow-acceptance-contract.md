@@ -261,9 +261,3 @@ Batch 18.3 closes the bounded consumer seam for this milestone:
   acceptance lane
 - `g08.018` is now complete, and the next `g08` queue is integrated
   live-ownership and workflow acceptance depth
-
-## Next Task
-
-Continue `g08.019` with Batch 19.1 by freezing the shared integrated live-
-ownership and workflow acceptance contract on top of the closed Linux live,
-device workflow, immersive, and control-preview workflow acceptance seams.

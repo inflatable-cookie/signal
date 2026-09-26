@@ -289,10 +289,3 @@ This closes the bounded contract meaningfully:
   needed to inspect the current guarded display baseline
 - page-aware display depth, real motor transport, real haptic transport, and
   fuller controller workflow remain intentionally deferred
-
-## Next Task
-
-Continue `g08.010` with Batch 10.1 by freezing the first runtime-owned
-control-surface scene mapping, feedback pages, and safe action graph contract
-on top of the closed controller-expression, control-surface, advanced
-feedback, and advanced-hardware seams.

@@ -703,8 +703,3 @@ Batch 34.3 admitted the private owner. Batch 34.4 froze direct public widening
 over the same `2N..=8N` domain. Batch 34.5 admitted that public wrapper with
 `12/12` focused public and `10/10` retained private tests. Batch 34.6 closes
 the lane.
-
-## Next Task
-
-Execute `g10.035` Batch 35.2 only. Keep this private renderer and its public v4
-output unchanged; Cyclic remains outside Automatic.

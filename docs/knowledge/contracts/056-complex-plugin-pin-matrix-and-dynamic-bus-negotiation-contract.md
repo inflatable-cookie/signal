@@ -228,9 +228,3 @@ seam.
 - the machine-readable supervisor boundary now presents complex plugin-I/O,
   pin-group identity, pin-matrix posture, and dynamic bus-negotiation posture
   as one bounded shared proof surface
-
-## Next Task
-
-Open `g08.006` with Batch 6.1 by freezing the first runtime-owned immersive
-object rendering and room-policy contract on top of the closed plugin-routing,
-LV2 extension, Linux parity, and live backend seams.

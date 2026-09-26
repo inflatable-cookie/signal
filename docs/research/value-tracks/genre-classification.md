@@ -155,8 +155,3 @@ Key tension: Finch wants cautious semantic classification that stays grounded in
 - [x] `continue research` — need to validate embedding approach
 - [ ] `prototype first` — pending embedding evaluation
 - [ ] `promote to concept work` — not yet
-
-## Next Task
-
-Prototype a `signal-analysis-embed` inference path, evaluate embedding quality
-on a diverse corpus, and test taxonomy-mapping plus confidence calibration.

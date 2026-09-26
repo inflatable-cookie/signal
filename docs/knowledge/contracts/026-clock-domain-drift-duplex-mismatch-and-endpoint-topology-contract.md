@@ -277,9 +277,3 @@ Batch 15.3 closes the bounded consumer proof seam for this contract:
 - richer duplex cross-clock and partial-availability cases stay on the same
   shared proof spine through focused local-host tests, while the stable server
   host edge still does not expose live host-I/O receipts directly
-
-## Next Task
-
-Continue `g06.016` with Batch 16.1 by freezing the external-I/O, monitoring
-tap-point, and loopback measurement contract on top of this closed clocking
-and endpoint-topology boundary.

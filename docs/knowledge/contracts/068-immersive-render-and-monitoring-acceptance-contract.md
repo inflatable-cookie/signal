@@ -253,9 +253,3 @@ repo-owned immersive lane.
 - the shared claim stays additive over the closed immersive contracts and
   typed runtime receipts instead of opening a renderer-private acceptance shell
   or a workflow-local monitoring model
-
-## Next Task
-
-Continue `g08.018` with Batch 18.1 by freezing the shared control-surface and
-preview workflow acceptance contract on top of the closed advanced-hardware,
-workflow, preview-transform, and preview-device consumer seams.

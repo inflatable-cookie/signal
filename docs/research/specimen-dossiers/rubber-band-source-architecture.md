@@ -168,14 +168,3 @@ grainier on `M001`. Rubber Band is cleaner on `M003` and `M006`. Similar grain
 or encoding-like defects occur on opposite engines on different rows. No one
 R3 source invariant is justified as the next mono intervention, and no overall
 winner is established.
-
-## Next Task
-
-Batch 29.7BD closes channel-local peak ownership as the active correction
-branch. Retained tone evidence instead isolates a direct-grid split: the tones
-farther from Signal's `640`-point long-grid bins have `1.153146..2.343541`
-radian interior IPD, while the nearer group stays below `0.000376`. Signal
-commits raw per-atom fuzzy ratios directly to terminal state; R3 completes
-classifier labels into modal frequency ranges first. Batch 29.7BE may freeze
-one Signal-owned no-audio boundary proof for that seam. Do not transfer Rubber
-Band expression, widths, ranges, thresholds, tables, or constants.

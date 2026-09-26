@@ -30,9 +30,3 @@ consumer or authority-specific layers around it.
 - New algorithm and crate-shape research lands in `signal/docs/research/`.
 - Finch docs refer back to Signal for DSP and analysis authority.
 - Signal package planning can proceed without app-local duplicate crate plans.
-
-## Next Task
-
-Keep this ownership boundary as the front door for DSP/host seam questions.
-When a new boundary needs stronger guarantees than prose architecture alone,
-freeze a numbered contract in `docs/knowledge/contracts/contract-index.md`.

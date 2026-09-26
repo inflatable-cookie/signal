@@ -42,9 +42,3 @@ without duplicating core signal-processing work.
   child workspace folder.
 - Runtime-host boundaries map to trust edges, not to first-party ownership
   boundaries.
-
-## Next Task
-
-State the vision baseline as current: refresh this file only when Signal
-needs a materially new long-horizon constraint or milestone map. Do not fold
-delivery sequencing into vision docs.

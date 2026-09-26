@@ -264,9 +264,3 @@ consumer-facing supervisor export proof on top of the repo-owned grouped lane.
 - the shared claim stays additive over the closed Linux contracts and typed
   runtime receipts instead of opening a daemon-local recovery shell or a
   backend-private failure-injection model
-
-## Next Task
-
-Continue `g08.017` with Batch 17.1 by freezing the shared immersive render and
-monitoring acceptance contract on top of the closed immersive room-policy,
-deployment-monitoring, renderer-export, and spatial consumer seams.

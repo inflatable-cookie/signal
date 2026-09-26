@@ -248,9 +248,3 @@ Batch 11.3 closes the first cross-adapter consumer proof surface:
   crate internals
 - later `g06.012+` work can build richer event or preset depth on top of this
   bounded parity baseline instead of reopening backend breadth authority
-
-## Next Task
-
-Continue `g06.012` with Batch 12.1 by freezing the widened generic MIDI,
-note-expression, and plugin-event vocabulary across CLAP, VST3, and AU before
-runtime and adapter event-depth work begins.

@@ -137,9 +137,3 @@ own failure-first preregistration after complete no-audio passage.
 - [Damskagg and Valimaki, Audio Time Stretching Using Fuzzy Classification of Spectral Bins](https://doi.org/10.3390/app7121293)
 - [Rubber Band source architecture](../specimen-dossiers/rubber-band-source-architecture.md)
 - [Direct channel-local peak topology](./023-direct-channel-local-peak-topology.md)
-
-## Next Task
-
-Run Batch 29.7BE under Rule 31AF. Freeze the Signal-owned material label,
-modal completion, range, tie, and coefficient-only falsifier contract. Do not
-implement it or run audio in that batch.

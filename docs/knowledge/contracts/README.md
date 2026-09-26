@@ -6,7 +6,7 @@ Updated: 2026-07-24
 ## In plain words
 
 A contract is a frozen boundary decision: it exists when prose architecture is
-not precise enough to rely on. Numbered `001`–`085`, each file names one seam
+not precise enough to rely on. Numbered `001`–`087`, each file names one seam
 and the guarantees consumers can count on. Don't read them in order — use the
 [contract index](./contract-index.md), which groups them by boundary family
 (runtime scheduling, plugin adapters, hardware portability, stretch, and so
@@ -33,7 +33,7 @@ Use this section for:
 
 ## Current Baseline
 
-- `001-working-rules.md` for repository execution posture
+- `release.md` for tagged Git release procedure and broker distribution
 - `001-shared-dsp-and-host-boundary.md`
 - `002-supervisor-export-schema-and-report-boundary.md`
 - `003-crate-maturity-and-public-runtime-boundary-baseline.md`
@@ -127,10 +127,3 @@ Use this section for:
 
 Add a new contract only when the boundary needs stronger guarantees than
 `architecture/` alone can provide.
-
-## Next Task
-
-Use `docs/knowledge/contracts/contract-index.md` and `001-working-rules.md` as the
-contract front doors. Contract `086` Linux CLAP discovery shipped 2026-08-21
-(Soundcheck card 136 / Signal PR #6). Contract `087` Windows CLAP discovery
-shipped 2026-08-22 (Signal PR #7). Do not open a follow-on generation.

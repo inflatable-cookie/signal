@@ -46,9 +46,3 @@ UI shells.
 - a crate-to-demo coverage matrix in repo docs
 - Effigy demo tasks or equivalent repo-owned launch commands
 - machine-readable manifest export for each demo binary or scenario bundle
-
-## Next Task
-
-`g09.015` is complete; the generation is archived at
-`docs/roadmaps/archive/g09.md`. Apply this contract to operator-visible demo
-proof only when a new task names it.

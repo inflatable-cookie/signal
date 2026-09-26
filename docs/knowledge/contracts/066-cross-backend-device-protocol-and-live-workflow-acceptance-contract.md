@@ -265,9 +265,3 @@ acceptance seam:
   the existing boundary tasks
 - `g08.015` is now complete, and the next acceptance queue is Linux live
   backend ownership and failure-injection depth
-
-## Next Task
-
-Continue `g08.016` with Batch 16.1 by freezing the shared live Linux backend
-acceptance and failure-injection contract on top of the closed live ownership,
-JACK coordination, PipeWire/ALSA parity, and clock-topology seams.
