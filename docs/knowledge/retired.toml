@@ -7,3 +7,11 @@ terms = ["roadmap card", "generation index", "northstar:lifecycle", "chatterbox 
 paths = [".northstar/lifecycle/", "docs/roadmaps/", "docs/handoffs/", "docs/logs/", "docs/specs/"]
 config_keys = ["northstar/queue:hook", "paseo.queue.control.v4"]
 allow = ["docs/knowledge/retired.toml", "CHANGELOG.md", "fixtures/", "demos/receipts/"]
+
+[[retired]]
+id = "papercuts-file"
+retired = "2026-09-26"
+replacement = "Queue papercuts filed with papercut.add (see the northstar-lean skill)."
+owner = "AGENTS.md"
+terms = ["PAPERCUTS.md"]
+allow = ["CHANGELOG.md"]
