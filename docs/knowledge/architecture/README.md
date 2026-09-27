@@ -34,7 +34,7 @@ Use this section for:
 - trust-edge adapter boundaries
 - generic library invariants
 
-Keep future work in [the plan](../../plan.md); Queue owns task sequencing.
+Keep future work in the plan; Queue owns task sequencing.
 
 ## Active Entry Points
 

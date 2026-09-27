@@ -16,10 +16,10 @@ The transparent stretch renderer and exact-ratio creative `Dream` and
 | Durable behavior and policy | [Contracts](knowledge/contracts/contract-index.md) |
 | Release procedure | [Release](knowledge/contracts/release.md) |
 | Open questions and retired concepts | [Knowledge index](knowledge/README.md) |
-| Priorities and product pull | [Plan](plan.md) |
+| Priorities and product pull | Plan |
 | Consumer setup and examples | [Reference](reference/consuming-signal.md) and [quick start](reference/quick-start.md) |
 | Source studies and frozen evidence | [Research](research/master-index.md) |
-| Unresolved leads | [Triage](triage/README.md) |
+| Unresolved leads | Triage |
 
 Task briefs, validation results, review, and closeout live in Queue. Git
 history holds removed process records. The repository records current truth

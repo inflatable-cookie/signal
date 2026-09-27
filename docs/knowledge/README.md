@@ -14,4 +14,4 @@ Each topic has one owner. Other files link here instead of repeating rules.
 
 User guides remain under `docs/reference/`. Source studies and cited evidence
 remain under `docs/research/`; they do not authorize work. Intent is in
-[`docs/plan.md`](../plan.md). Queue holds task process.
+`plan.md` (Git history). Queue holds task process.

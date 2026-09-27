@@ -107,4 +107,4 @@ and transport-session concurrency were removed in g10.020.
   backends through `signal-host-local`.
 - SharedSandbox multiplexing closed in `g11.002`. Remaining plugin
   integration work is product-pulled workflow depth held as triage candidates in
-  `docs/triage/20260909-retired-backlog-post-g10-rebuild-on-demand.md`.
+  the Queue lead "Retired backlog: post-g10 rebuild-on-demand candidates".

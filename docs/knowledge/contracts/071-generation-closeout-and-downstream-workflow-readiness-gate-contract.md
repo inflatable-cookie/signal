@@ -268,7 +268,7 @@ one typed, repo-owned gate instead of a manual summary.
 - the machine-readable `g08` closeout descriptor now records the final bounded
   closeout verdict instead of a review-active placeholder
 - the closeout surface now points at
-  `docs/triage/20260909-retired-backlog-post-g08-environment-matrices.md`
+  the Queue lead "Retired backlog: post-g08 repeated-run and environment-matrix depth"
   as the explicit post-`g08` candidate queue instead of a self-referential
   placeholder (roadmap-backlog path retired 2026-09-09; same meaning preserved
   in triage)

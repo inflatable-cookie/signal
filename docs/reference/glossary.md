@@ -22,7 +22,7 @@ rewriting it.
 
 | Term | What it is |
 | --- | --- |
-| **Northstar** | The repository keeps current knowledge and intent in `docs/knowledge/` and `docs/plan.md`; Queue keeps tasks, briefs, status, review, closeout, and outcomes. |
+| **Northstar** | The repository keeps current knowledge in `docs/knowledge/`; Queue keeps the plan, leads, tasks, briefs, status, review, closeout, and outcomes. |
 | **Vision** | The long-horizon purpose and constraints in `docs/knowledge/vision.md`. |
 | **Architecture** | Current crates, boundaries, and invariants in `docs/knowledge/architecture/`. |
 | **Contract** | A durable boundary decision in `docs/knowledge/contracts/`. See the contract index. |

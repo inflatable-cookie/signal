@@ -3,11 +3,9 @@
 "qa:docs:agent-defaults" = "effigy docs check forbidden AGENTS.md README.md docs/README.md --forbid '--repo .'"
 "qa:docs:headings" = "effigy docs check headings docs/README.md --require-heading '## Read by topic'"
 "qa:docs:knowledge" = "effigy docs check headings docs/knowledge/README.md --require-heading '# Signal knowledge'"
-"qa:docs:plan" = "effigy docs check headings docs/plan.md --require-heading '# Signal plan'"
 "qa:northstar" = [
   { task = "qa:docs:headings" },
   { task = "qa:docs:knowledge" },
-  { task = "qa:docs:plan" },
 ]
 "qa:docs" = [
   { task = "qa:docs:links" },

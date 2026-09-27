@@ -7,7 +7,7 @@ to downstream products.
 
 Read [docs/README.md](docs/README.md), then the owning file in
 [docs/knowledge/](docs/knowledge/README.md). Intent is in
-[docs/plan.md](docs/plan.md). Queue holds tasks, briefs, status, review,
+`plan.md` (Git history). Queue holds tasks, briefs, status, review,
 closeout, and outcomes. Triage notes are leads, not authority.
 
 ## Boundaries
@@ -38,7 +38,7 @@ closeout, and outcomes. Triage notes are leads, not authority.
 - Keep knowledge current in the same change as behavior. One owner per fact.
   Record unresolved questions in `docs/knowledge/questions.md`.
 - File papercuts in Queue with `papercut.add` (see the `northstar`
-  skill). There is no `PAPERCUTS.md`.
+  skill). The repository holds no papercut file or triage folder.
 - Write plainly; see `docs/policy/internal-writing-style.md`.
 
 ## Validation
