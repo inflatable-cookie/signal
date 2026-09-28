@@ -50,9 +50,7 @@ tool consumes output. Do not add a current-directory repo override.
 
 `effigy validate` builds, formats, and compile-checks. `effigy qa` is the
 full local board. After docs changes run `effigy qa:docs` and
-`effigy qa:northstar`. AGENTS review uses the installed Northstar audit:
-`effigy --repo <installed-northstar> northstar/check:agent-instructions <this-repo>`.
-`qa:docs:agent-defaults` remains a separate check.
+`effigy qa:northstar`. `qa:docs:agent-defaults` remains a separate check.
 
 Rust source, manifests, build files, tests, and related docs follow the
 repository-owned quality profile and deviations in `docs/knowledge/contracts/`.
