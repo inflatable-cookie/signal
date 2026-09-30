@@ -41,6 +41,22 @@ closeout, and outcomes. Triage notes are leads, not authority.
   skill). The repository holds no papercut file or triage folder.
 - Write plainly; see `docs/policy/internal-writing-style.md`.
 
+## Effigy guidance
+
+Use the maintained installed `effigy` Agent Skill for shared guidance.
+Install it with `npx skills add inflatable-cookie/effigy -g` if absent.
+Supported roots are `~/.agents/skills/effigy`, `~/.codex/skills/effigy`,
+`~/.claude/skills/effigy`, and `~/.cursor/skills/effigy`; symlink aliases must
+resolve to one canonical directory. Stop on conflicting installs. Re-read its
+`SKILL.md` and confirm discovery in a fresh agent context after a refresh.
+Keep Signal selectors and guardrails here and in owning knowledge.
+
+The executable is separate: check `command -v effigy` and
+`effigy admission status --json` for schema `effigy.admission.status.v1`.
+If missing or unsupported, install an admission-capable Effigy build using
+Effigy's installation guidance before validation. Plain `effigy init` does
+not install the skill; do not restore a frozen project copy.
+
 ## Validation
 
 Use Effigy for supported work. Use `effigy graph` for code understanding,
@@ -48,9 +64,11 @@ Use Effigy for supported work. Use `effigy graph` for code understanding,
 and `effigy test --plan` when test shape matters. Use `--json` when another
 tool consumes output. Do not add a current-directory repo override.
 
-`effigy validate` builds, formats, and compile-checks. `effigy qa` is the
-full local board. After docs changes run `effigy qa:docs` and
-`effigy qa:northstar`. `qa:docs:agent-defaults` remains a separate check.
+Run targeted checks once per task. `effigy validate` builds, formats, and
+compile-checks; select only the checks needed for the changed code.
+After docs changes run `effigy qa:docs`, which includes `qa:northstar`.
+`qa:docs:agent-defaults` remains a separate check. Queue runs the full
+`effigy qa` board on `main` at milestones.
 
 Rust source, manifests, build files, tests, and related docs follow the
 repository-owned quality profile and deviations in `docs/knowledge/contracts/`.
