@@ -5,7 +5,7 @@ Updated: 2026-04-14
 
 ## Purpose
 
-This folder holds the Bun/TS runner layer for the Signal demo registry.
+This folder holds the Bun/TS runner layer for the Signal `demo:*` tasks.
 
 It exists to turn manifests plus repo-owned commands into stable receipts and
 rendered operator views.

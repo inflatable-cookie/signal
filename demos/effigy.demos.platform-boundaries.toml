@@ -1,12 +1,13 @@
-[demos.macos-au-coreaudio-boundary]
-title = "Signal macOS AU CoreAudio Boundary Demo"
-summary = "Runs the existing macOS-specific AU and CoreAudio proof lane through one dedicated demo entry."
-proof = "Operator-visible proof that the macOS AU/CoreAudio boundary is queryable and reviewable through Effigy's demo registry."
-owner = "signal"
-mode = "headless"
-status = "ready"
-covers = ["signal-plugin-au", "signal-host-local"]
-tags = ["hardware", "macos", "au", "coreaudio"]
+# Platform-boundary demo tasks. Each was a `[demos.*]` entry until Effigy v0.15
+# removed the demo registry; the runs below are unchanged.
+
+# Signal macOS AU CoreAudio Boundary Demo: runs the existing macOS-specific AU and
+# CoreAudio proof lane through one dedicated headless entry (headless; covers
+# signal-plugin-au, signal-host-local).
+# Receipt: demos/receipts/macos-au-coreaudio-boundary.receipt.json
+# Artifacts: demos/receipts/macos-au-coreaudio-boundary.view.html,
+# demos/scenarios/macos-au-coreaudio-boundary.default.md
+[tasks."demo:macos-au-coreaudio-boundary"]
 run = [
   { run = "bun -e \"await Bun.file('demos/manifest.schema.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/templates/demo-manifest.example.json').json()\"" },
@@ -16,9 +17,3 @@ run = [
   { run = "bun run demos/scripts/run_macos_au_coreaudio_boundary_demo.ts" },
   { run = "bun -e \"await Bun.file('demos/receipts/macos-au-coreaudio-boundary.receipt.json').json()\"" },
 ]
-receipt = "demos/receipts/macos-au-coreaudio-boundary.receipt.json"
-artifacts = [
-  "demos/receipts/macos-au-coreaudio-boundary.view.html",
-  "demos/scenarios/macos-au-coreaudio-boundary.default.md",
-]
-

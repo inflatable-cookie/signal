@@ -24,13 +24,13 @@ operator memory.
 - `coverage-matrix.md`
   - human-readable view of the same coverage inventory
 - `effigy.demos.toml`
-  - shared demo task shim plus local manifest-import root for the demo registry
+  - include root that pulls the demo task files below into the repo manifest
 - `effigy.demos.operator-views.toml`
-  - headless operator-view demo records
+  - headless operator-view demo tasks
 - `effigy.demos.platform-boundaries.toml`
-  - headless platform-boundary demo records
+  - headless platform-boundary demo tasks
 - `effigy.demos.interactive.toml`
-  - interactive demo records
+  - interactive demo tasks
 - `receipts/`
   - repo-owned proof artifacts for official demos
 - `scenarios/`
@@ -54,7 +54,9 @@ operator memory.
 
 ## Current Shape
 
-- registry files are split by concern instead of accumulating in one giant
+- each demo is an ordinary Effigy task named `demo:<surface>`, so it runs as
+  `effigy demo:<surface>`; Effigy v0.15 removed the `[demos.*]` registry
+- task files are split by concern instead of accumulating in one giant
   manifest:
   - operator views
   - platform boundaries
@@ -68,7 +70,7 @@ operator memory.
 - historical `g09` planning and closeout docs may still mention older runner
   paths; the live authority is the current file layout under `demos/`
 - if history and live surfaces disagree on runner language or file names, trust
-  the current demo registry and `demos/scripts/`
+  the current `demo:*` tasks and `demos/scripts/`
 
 ## Program Shape
 
@@ -141,6 +143,6 @@ operator memory.
 ## Current Boundary
 
 - the demo surface is now fully Bun/TS-backed
-- Effigy owns discovery and launch through the demo registry
+- Effigy owns discovery and launch through `effigy demo:<name>` tasks
 - the current live set stays intentionally small and explicit rather than
   widening into product shells or ad hoc utility scripts
