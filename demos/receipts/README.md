@@ -17,7 +17,7 @@ Each live demo currently owns one canonical pair:
 - canonical receipt JSON for every live demo
 - canonical rendered companion HTML for every live demo
 
-These files are part of the proof contract behind the demo registry. They are
+These files are part of the proof contract behind the `demo:*` tasks. They are
 not disposable cache output.
 
 ## What Does Not Belong Here
@@ -35,5 +35,5 @@ not disposable cache output.
 
 ## Next Task
 
-Keep the receipt set aligned with the live demo registry and avoid adding
-secondary artifact conventions unless the registry genuinely needs them.
+Keep the receipt set aligned with the live `demo:*` tasks and avoid adding
+secondary artifact conventions unless those tasks genuinely need them.

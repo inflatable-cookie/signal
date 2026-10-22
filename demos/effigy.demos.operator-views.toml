@@ -1,12 +1,13 @@
-[demos.plugin-sandbox-lifecycle]
-title = "Signal Sandbox Lifecycle Demo"
-summary = "Exercises the sandbox broker lifecycle, timeout recovery, and shutdown proof through the existing repo-owned task."
-proof = "Operator-visible proof that sandbox lifecycle state, timeout cleanup, and rendered evidence stay inspectable through Effigy's demo surface."
-owner = "signal"
-mode = "headless"
-status = "ready"
-covers = ["signal-plugin-sandbox", "signal-ipc"]
-tags = ["plugin", "sandbox", "lifecycle"]
+# Headless operator-view demo tasks. Each was a `[demos.*]` entry until Effigy
+# v0.15 removed the demo registry; the run steps below are unchanged.
+
+# Signal Sandbox Lifecycle Demo: exercises the sandbox broker lifecycle, timeout
+# recovery, and shutdown proof through the existing repo-owned task (headless;
+# covers signal-plugin-sandbox, signal-ipc).
+# Receipt: demos/receipts/plugin-sandbox-lifecycle.receipt.json
+# Artifacts: demos/receipts/plugin-sandbox-lifecycle.view.html,
+# demos/scenarios/plugin-sandbox-lifecycle.default.md
+[tasks."demo:plugin-sandbox-lifecycle"]
 run = [
   { run = "bun -e \"await Bun.file('demos/manifest.schema.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/templates/demo-manifest.example.json').json()\"" },
@@ -16,21 +17,14 @@ run = [
   { run = "bun run demos/scripts/run_sandbox_lifecycle_demo.ts" },
   { run = "bun -e \"await Bun.file('demos/receipts/plugin-sandbox-lifecycle.receipt.json').json()\"" },
 ]
-receipt = "demos/receipts/plugin-sandbox-lifecycle.receipt.json"
-artifacts = [
-  "demos/receipts/plugin-sandbox-lifecycle.view.html",
-  "demos/scenarios/plugin-sandbox-lifecycle.default.md",
-]
 
-[demos.runtime-recovery-inspector]
-title = "Signal Runtime Recovery Inspector Demo"
-summary = "Captures runtime supervisor readiness, watchdog, degraded-surface, and fault posture through the existing example-backed proof task."
-proof = "Operator-visible proof that runtime recovery truth can be discovered, run, and reviewed inside Effigy's demo registry instead of raw task memory."
-owner = "signal"
-mode = "headless"
-status = "ready"
-covers = ["signal-runtime"]
-tags = ["runtime", "recovery", "supervisor"]
+# Signal Runtime Recovery Inspector Demo: captures runtime supervisor readiness,
+# watchdog, degraded-surface, and fault posture through the existing
+# example-backed proof task (headless; covers signal-runtime).
+# Receipt: demos/receipts/runtime-recovery-inspector.receipt.json
+# Artifacts: demos/receipts/runtime-recovery-inspector.view.html,
+# demos/scenarios/runtime-recovery-inspector.default.md
+[tasks."demo:runtime-recovery-inspector"]
 run = [
   { run = "bun -e \"await Bun.file('demos/manifest.schema.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/templates/demo-manifest.example.json').json()\"" },
@@ -40,21 +34,14 @@ run = [
   { run = "bun run demos/scripts/run_runtime_recovery_inspector_demo.ts" },
   { run = "bun -e \"await Bun.file('demos/receipts/runtime-recovery-inspector.receipt.json').json()\"" },
 ]
-receipt = "demos/receipts/runtime-recovery-inspector.receipt.json"
-artifacts = [
-  "demos/receipts/runtime-recovery-inspector.view.html",
-  "demos/scenarios/runtime-recovery-inspector.default.md",
-]
 
-[demos.hardware-topology-diagnostics]
-title = "Signal Hardware Topology Diagnostics Demo"
-summary = "Captures native local-host and simulated server-host hardware posture through the existing summary-driven demo task."
-proof = "Operator-visible proof that native-versus-simulated hardware topology truth is discoverable and reviewable as a first-class demo."
-owner = "signal"
-mode = "headless"
-status = "ready"
-covers = ["signal-hardware"]
-tags = ["hardware", "topology", "diagnostics"]
+# Signal Hardware Topology Diagnostics Demo: captures native local-host and
+# simulated server-host hardware posture through the existing summary-driven task
+# (headless; covers signal-hardware).
+# Receipt: demos/receipts/hardware-topology-diagnostics.receipt.json
+# Artifacts: demos/receipts/hardware-topology-diagnostics.view.html,
+# demos/scenarios/hardware-topology-diagnostics.default.md
+[tasks."demo:hardware-topology-diagnostics"]
 run = [
   { run = "bun -e \"await Bun.file('demos/manifest.schema.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/templates/demo-manifest.example.json').json()\"" },
@@ -64,21 +51,14 @@ run = [
   { run = "bun run demos/scripts/run_hardware_topology_diagnostics_demo.ts" },
   { run = "bun -e \"await Bun.file('demos/receipts/hardware-topology-diagnostics.receipt.json').json()\"" },
 ]
-receipt = "demos/receipts/hardware-topology-diagnostics.receipt.json"
-artifacts = [
-  "demos/receipts/hardware-topology-diagnostics.view.html",
-  "demos/scenarios/hardware-topology-diagnostics.default.md",
-]
 
-[demos.graph-execution-inspector]
-title = "Signal Graph Execution Inspector Demo"
-summary = "Wraps the existing multichannel, sidechain, multi-bus, and spatial graph proof surfaces through one shared demo."
-proof = "Operator-visible proof that graph-routing boundary posture stays inspectable through Effigy's demo browser instead of raw descriptor commands."
-owner = "signal"
-mode = "headless"
-status = "ready"
-covers = ["signal-primitives", "signal-graph"]
-tags = ["graph", "routing", "execution"]
+# Signal Graph Execution Inspector Demo: wraps the existing multichannel,
+# sidechain, multi-bus, and spatial graph proof surfaces through one shared task
+# (headless; covers signal-primitives, signal-graph).
+# Receipt: demos/receipts/graph-execution-inspector.receipt.json
+# Artifacts: demos/receipts/graph-execution-inspector.view.html,
+# demos/scenarios/graph-execution-inspector.default.md
+[tasks."demo:graph-execution-inspector"]
 run = [
   { run = "bun -e \"await Bun.file('demos/manifest.schema.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/templates/demo-manifest.example.json').json()\"" },
@@ -88,21 +68,14 @@ run = [
   { run = "bun run demos/scripts/run_graph_execution_inspector_demo.ts" },
   { run = "bun -e \"await Bun.file('demos/receipts/graph-execution-inspector.receipt.json').json()\"" },
 ]
-receipt = "demos/receipts/graph-execution-inspector.receipt.json"
-artifacts = [
-  "demos/receipts/graph-execution-inspector.view.html",
-  "demos/scenarios/graph-execution-inspector.default.md",
-]
 
-[demos.dsp-processing-lab]
-title = "Signal DSP Processing Lab Demo"
-summary = "Wraps the existing stretch, marker-analysis, and transform-artifact proof family through one shared demo."
-proof = "Operator-visible proof that DSP processing posture is discoverable and reviewable through Effigy's demo surface instead of loose acceptance commands."
-owner = "signal"
-mode = "headless"
-status = "ready"
-covers = ["signal-dsp", "signal-dsp-resample", "signal-dsp-spectral"]
-tags = ["dsp", "processing", "lab"]
+# Signal DSP Processing Lab Demo: wraps the existing stretch, marker-analysis, and
+# transform-artifact proof family through one shared task (headless; covers
+# signal-dsp, signal-dsp-resample, signal-dsp-spectral).
+# Receipt: demos/receipts/dsp-processing-lab.receipt.json
+# Artifacts: demos/receipts/dsp-processing-lab.view.html,
+# demos/scenarios/dsp-processing-lab.default.md
+[tasks."demo:dsp-processing-lab"]
 run = [
   { run = "bun -e \"await Bun.file('demos/manifest.schema.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/templates/demo-manifest.example.json').json()\"" },
@@ -112,28 +85,16 @@ run = [
   { run = "bun run demos/scripts/run_dsp_processing_lab_demo.ts" },
   { run = "bun -e \"await Bun.file('demos/receipts/dsp-processing-lab.receipt.json').json()\"" },
 ]
-receipt = "demos/receipts/dsp-processing-lab.receipt.json"
-artifacts = [
-  "demos/receipts/dsp-processing-lab.view.html",
-  "demos/scenarios/dsp-processing-lab.default.md",
-]
 
-[demos.analysis-feature-inspector]
-title = "Signal Analysis Feature Inspector Demo"
-summary = "Wraps the existing rhythm, tonal, loudness, character, and semantic inspection proof family through one shared demo."
-proof = "Operator-visible proof that bounded analysis posture is discoverable and reviewable through Effigy's demo surface."
-owner = "signal"
-mode = "headless"
-status = "ready"
-covers = [
-  "signal-analysis",
-  "signal-analysis-character",
-  "signal-analysis-embed",
-  "signal-analysis-loudness",
-  "signal-analysis-rhythm",
-  "signal-analysis-tonal",
-]
-tags = ["analysis", "inspector", "offline"]
+# Signal Analysis Feature Inspector Demo: wraps the existing rhythm, tonal,
+# loudness, character, and semantic inspection proof family through one shared
+# task (headless; covers signal-analysis, signal-analysis-character,
+# signal-analysis-embed, signal-analysis-loudness, signal-analysis-rhythm,
+# signal-analysis-tonal).
+# Receipt: demos/receipts/analysis-feature-inspector.receipt.json
+# Artifacts: demos/receipts/analysis-feature-inspector.view.html,
+# demos/scenarios/analysis-feature-inspector.default.md
+[tasks."demo:analysis-feature-inspector"]
 run = [
   { run = "bun -e \"await Bun.file('demos/manifest.schema.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/templates/demo-manifest.example.json').json()\"" },
@@ -142,9 +103,4 @@ run = [
   { run = "bun -e \"await Bun.file('demos/manifests/analysis-feature-inspector.demo.json').json()\"" },
   { run = "bun run demos/scripts/run_analysis_feature_inspector_demo.ts" },
   { run = "bun -e \"await Bun.file('demos/receipts/analysis-feature-inspector.receipt.json').json()\"" },
-]
-receipt = "demos/receipts/analysis-feature-inspector.receipt.json"
-artifacts = [
-  "demos/receipts/analysis-feature-inspector.view.html",
-  "demos/scenarios/analysis-feature-inspector.default.md",
 ]

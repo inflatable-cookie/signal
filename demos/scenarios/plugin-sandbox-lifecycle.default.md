@@ -10,7 +10,7 @@ Updated: 2026-04-09
 
 ## Launch
 
-- command: `effigy demo:sandbox-lifecycle`
+- command: `effigy demo:plugin-sandbox-lifecycle`
 - owner surface: `effigy-task`
 
 ## Expected Human Checks

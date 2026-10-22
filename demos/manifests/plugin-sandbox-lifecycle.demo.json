@@ -6,7 +6,7 @@
   "kind": "dedicated-demo",
   "status": "active",
   "launch": {
-    "command": "effigy demo:sandbox-lifecycle",
+    "command": "effigy demo:plugin-sandbox-lifecycle",
     "owner_surface": "effigy-task",
     "notes": "Bootstraps the existing signal-plugin-sandbox broker binary, records a machine-readable receipt, and emits a rendered operator companion."
   },

@@ -27,14 +27,14 @@ workspace without overclaiming live demo coverage before `g09.012` and
 - every active workspace crate is mapped to either a live demo manifest or an
   explicit planned demo surface and milestone
 - historical `g09` logs and batch cards may still reference pre-Bun runner
-  paths; the live authority is the current Effigy demo registry plus the files
+  paths; the live authority is the current `demo:*` Effigy tasks plus the files
   under `demos/`
 
 ## Live surfaces
 
 - `signal.demo.plugin.sandbox-lifecycle`
   - crates: `signal-plugin-sandbox`, `signal-ipc`
-  - launch: `effigy demo:sandbox-lifecycle`
+  - launch: `effigy demo:plugin-sandbox-lifecycle`
 - `signal.demo.plugin.capability-browser`
   - crates: `signal-plugin`, `signal-plugin-clap`, `signal-plugin-vst3`,
     `signal-plugin-au`, `signal-plugin-lv2`, `signal-host-local`,

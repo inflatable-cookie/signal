@@ -1,19 +1,13 @@
-[demos.plugin-capability-browser]
-title = "Signal Plugin Capability Browser"
-summary = "Launches the bounded interactive plugin browser and keeps the official proof receipt and operator notes attached to one demo entry."
-proof = "Operator-visible proof that real plugin inventory, host launchability, live terminal output, and bounded interaction can be driven through Effigy's demo browser."
-owner = "signal"
-mode = "interactive"
-status = "ready"
-covers = [
-  "signal-plugin",
-  "signal-plugin-clap",
-  "signal-plugin-vst3",
-  "signal-plugin-au",
-  "signal-plugin-lv2",
-  "signal-host-local",
-]
-tags = ["plugin", "browser", "interactive"]
+# Interactive demo tasks. This was a `[demos.*]` entry until Effigy v0.15 removed
+# the demo registry; the run steps below are unchanged.
+
+# Signal Plugin Capability Browser: launches the bounded interactive plugin browser
+# and keeps the official proof receipt and operator notes attached to one entry
+# (interactive; covers signal-plugin, signal-plugin-clap, signal-plugin-vst3,
+# signal-plugin-au, signal-plugin-lv2, signal-host-local).
+# Receipt: demos/receipts/plugin-capability-browser.receipt.json
+# Artifacts: demos/scenarios/plugin-capability-browser.default.md
+[tasks."demo:plugin-capability-browser"]
 run = [
   { run = "bun -e \"await Bun.file('demos/manifest.schema.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/templates/demo-manifest.example.json').json()\"" },
@@ -24,5 +18,3 @@ run = [
   { run = "bun -e \"await Bun.file('demos/receipts/plugin-capability-browser.receipt.json').json()\"" },
   { run = "bun run demos/scripts/run_plugin_capability_browser_demo.ts --scan-mode system --serve" },
 ]
-receipt = "demos/receipts/plugin-capability-browser.receipt.json"
-artifacts = ["demos/scenarios/plugin-capability-browser.default.md"]
