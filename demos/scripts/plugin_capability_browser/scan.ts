@@ -62,7 +62,7 @@ export async function runScanExample(
     cwd: REPO_ROOT,
     detached: true,
     stdio: ["ignore", "pipe", "pipe"],
-    env: { ...process.env, CARGO_TARGET_DIR: "/tmp/signal-demo-target" },
+    env: process.env,
   });
   let stdout = "";
   let stderr = "";

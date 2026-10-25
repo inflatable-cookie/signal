@@ -13,7 +13,6 @@ export function launchEnv(plugin: JsonObject): Record<string, string> {
     SIGNAL_HOST_DEMO_PLUGIN_TYPE_ID: String(plugin.plugin_type_id),
     SIGNAL_HOST_DEMO_INTERACTION_MODE: "parameter-step",
     SIGNAL_HOST_DEMO_INTERACTION_VALUE: "0.73",
-    CARGO_TARGET_DIR: "/tmp/signal-demo-target",
   };
 }
 

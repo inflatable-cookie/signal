@@ -14,7 +14,7 @@ setup = ["bootstrap:deps"]
 
 [test.suites]
 compile = "oxide test --workspace --no-run"
-nextest = "oxide exec -- env CARGO_TARGET_DIR=/tmp/signal-nextest-target cargo nextest run --workspace"
+nextest = "oxide nextest run --workspace"
 
 [tasks]
 "bootstrap:deps" = "oxide fetch"

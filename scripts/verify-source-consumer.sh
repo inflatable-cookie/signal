@@ -14,7 +14,11 @@ set -euo pipefail
 release_repo_root=$(cd "$(dirname "$0")/.." && pwd)
 cd "$release_repo_root"
 
-release_tmp=$(mktemp -d)
+# Scratch stays off the internal disk: a unique folder per run under the
+# Builds drive, removed on exit.
+release_scratch_base=/Volumes/Builds/scratch/signal
+mkdir -p "$release_scratch_base"
+release_tmp=$(mktemp -d "$release_scratch_base/source-consumer.XXXXXX")
 trap 'rm -rf "$release_tmp"' EXIT
 
 release_consumer_root="$release_tmp/consumer"
@@ -126,7 +130,9 @@ EOF
 } > "$release_consumer_root/src/main.rs"
 
 oxide generate-lockfile --manifest-path "$release_consumer_root/Cargo.toml"
-oxide check --manifest-path "$release_consumer_root/Cargo.toml" --locked
+# The throwaway consumer is not a Git work tree, so a leased `oxide check` in it
+# refuses; run Cargo inside this checkout's lease instead.
+oxide exec -- cargo check --manifest-path "$release_consumer_root/Cargo.toml" --locked
 
 release_metadata="$release_tmp/metadata.json"
 oxide metadata \

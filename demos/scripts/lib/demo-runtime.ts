@@ -27,8 +27,8 @@ export type CompletedCommand = {
 
 const LIB_DIR = dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = resolve(LIB_DIR, "../../..");
-const DEMO_TARGET_DIR = "/tmp/signal-demo-target";
-const DEMO_ENV = { ...process.env, CARGO_TARGET_DIR: DEMO_TARGET_DIR };
+// The Effigy demo tasks run these scripts under `oxide exec`, which places
+// Cargo's build output and temporary files; no private target is set here.
 
 export function readJson<T>(path: string): T {
   return JSON.parse(readFileSync(resolve(REPO_ROOT, path), "utf8")) as T;
@@ -51,7 +51,7 @@ export function runCommand(command: string[], input?: string): CompletedCommand 
     cwd: REPO_ROOT,
     encoding: "utf8",
     input,
-    env: DEMO_ENV,
+    env: process.env,
   });
   if (result.status !== 0) {
     throw new Error(
@@ -74,7 +74,7 @@ export async function runCommandWithTimeout(
       cwd: REPO_ROOT,
       detached: true,
       stdio: ["ignore", "pipe", "pipe"],
-      env: DEMO_ENV,
+      env: process.env,
     });
 
     let stdout = "";
@@ -268,9 +268,7 @@ export async function runHostSummary(
     cwd: REPO_ROOT,
     detached: true,
     stdio: ["ignore", "pipe", "pipe"],
-    env: command[0] === "cargo"
-      ? { ...process.env, CARGO_TARGET_DIR: DEMO_TARGET_DIR }
-      : process.env,
+    env: process.env,
   });
   let stdout = "";
   let stderr = "";
