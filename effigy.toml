@@ -13,11 +13,11 @@ include = [
 setup = ["bootstrap:deps"]
 
 [test.suites]
-compile = "cargo test --workspace --no-run"
-nextest = "CARGO_TARGET_DIR=/tmp/signal-nextest-target cargo nextest run --workspace"
+compile = "oxide test --workspace --no-run"
+nextest = "oxide exec -- env CARGO_TARGET_DIR=/tmp/signal-nextest-target cargo nextest run --workspace"
 
 [tasks]
-"bootstrap:deps" = "cargo fetch"
+"bootstrap:deps" = "oxide fetch"
 # Cheap orientation for `effigy doctor`. Build stays in validate — never put
 # the workspace build in health.
 health = [{ task = "fmt" }]
@@ -31,14 +31,14 @@ qa = [
   { task = "validate" },
   { task = "qa:docs" },
 ]
-build = "cargo build --workspace"
-"check:docs" = "RUSTFLAGS='-D missing-docs' cargo check --workspace --lib"
-fmt = "cargo fmt --all -- --check"
+build = "oxide build --workspace"
+"check:docs" = "RUSTFLAGS='-D missing-docs' oxide check --workspace --lib"
+fmt = "oxide fmt --all -- --check"
 # Wall-clock soak lane. Single-threaded on purpose: these tests assert
 # sustained real-time throughput, and running them beside the rest of the
 # suite creates the contention that makes them fail. Local only -- shared CI
 # runners cannot support a throughput claim.
-"test:soak" = "SIGNAL_SOAK_TESTS=1 nice -n 5 cargo test -p signal-hardware -p signal-plugin-bridge -p signal-render-plane -- --test-threads=1"
+"test:soak" = "SIGNAL_SOAK_TESTS=1 nice -n 5 oxide test -p signal-hardware -p signal-plugin-bridge -p signal-render-plane -- --test-threads=1"
 # Release-only gates. Both make claims CI does not: the floor gate needs a
 # second rustup toolchain installed, and the source-consumer gate builds a
 # throwaway crate against a git source. Runnable standalone so a finding can be
@@ -54,9 +54,9 @@ fmt = "cargo fmt --all -- --check"
 # SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND (docs/reference/consuming-signal.md).
 "broker:provision" = "bash scripts/provision-sandbox-broker.sh"
 "broker:prove-prebuilt-contract" = "bash scripts/prove-sandbox-broker-prebuilt-contract.sh"
-lint = "nice -n 5 cargo clippy --workspace --all-targets --all-features --jobs $(( $(sysctl -n hw.ncpu) - 2 )) -- -D warnings"
-"lint:no-features" = "nice -n 5 cargo clippy --workspace --all-targets --no-default-features --jobs $(( $(sysctl -n hw.ncpu) - 2 )) -- -D warnings"
+lint = "nice -n 5 oxide clippy --workspace --all-targets --all-features --jobs $(( $(sysctl -n hw.ncpu) - 2 )) -- -D warnings"
+"lint:no-features" = "nice -n 5 oxide clippy --workspace --all-targets --no-default-features --jobs $(( $(sysctl -n hw.ncpu) - 2 )) -- -D warnings"
 # No `dev` task: signal-host-local is a library (its binary died in g10.005).
 # Use the runnable examples instead:
-#   cargo run -p signal-hardware-cpal --example tone
-#   cargo run -p signal-render-plane --example render_soak
+#   oxide run -p signal-hardware-cpal --example tone
+#   oxide run -p signal-render-plane --example render_soak

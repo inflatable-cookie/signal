@@ -32,10 +32,10 @@ tag-format = "v{version}"
 # `--all-features` alone cannot see cfg-gated code that only compiles when a
 # feature is off — a mis-gated item stays invisible until the no-feature build.
 [release.gates]
-fmt = "cargo fmt --all -- --check"
-lint = "nice -n 5 cargo clippy --workspace --all-targets --all-features --jobs $(( $(sysctl -n hw.ncpu) - 2 )) -- -D warnings"
-"lint:no-features" = "nice -n 5 cargo clippy --workspace --all-targets --no-default-features --jobs $(( $(sysctl -n hw.ncpu) - 2 )) -- -D warnings"
-test = "nice -n 5 cargo test --workspace --jobs $(( $(sysctl -n hw.ncpu) - 2 )) -- --test-threads=$(( $(sysctl -n hw.ncpu) - 4 ))"
+fmt = "oxide fmt --all -- --check"
+lint = "nice -n 5 oxide clippy --workspace --all-targets --all-features --jobs $(( $(sysctl -n hw.ncpu) - 2 )) -- -D warnings"
+"lint:no-features" = "nice -n 5 oxide clippy --workspace --all-targets --no-default-features --jobs $(( $(sysctl -n hw.ncpu) - 2 )) -- -D warnings"
+test = "nice -n 5 oxide test --workspace --jobs $(( $(sysctl -n hw.ncpu) - 2 )) -- --test-threads=$(( $(sysctl -n hw.ncpu) - 4 ))"
 # The wall-clock soak lane, which the default suite deliberately skips. Runs
 # single-threaded and takes about 40s. Local only: it asserts sustained
 # real-time throughput, which no shared CI runner can honour, so CI skips it

@@ -37,7 +37,7 @@ fi
 release_workspace_version=$(
   rg --max-count 1 '^version = "' Cargo.toml | sed 's/.*"\(.*\)"/\1/'
 )
-cargo update --workspace --quiet
+oxide update --workspace --quiet
 
 release_lock_changes=$(
   git diff -- Cargo.lock | rg '^[-+]' | rg -v '^(\+\+\+|---)' || true
@@ -62,10 +62,10 @@ fi
 # free for the build, four for the test run, so the machine stays usable.
 release_cores=$(sysctl -n hw.ncpu)
 
-nice -n 5 rustup run "$SIGNAL_GENERAL_MSRV" cargo clippy \
+nice -n 5 oxide exec -- rustup run "$SIGNAL_GENERAL_MSRV" cargo clippy \
   --workspace --all-targets --all-features --locked \
   --jobs $((release_cores - 2)) -- -D warnings
-nice -n 5 rustup run "$SIGNAL_GENERAL_MSRV" cargo test \
+nice -n 5 oxide exec -- rustup run "$SIGNAL_GENERAL_MSRV" cargo test \
   --workspace --locked \
   --jobs $((release_cores - 2)) -- --test-threads=$((release_cores - 4))
 

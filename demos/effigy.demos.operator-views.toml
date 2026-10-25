@@ -14,7 +14,7 @@ run = [
   { run = "bun -e \"await Bun.file('demos/templates/demo-receipt.example.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/coverage-matrix.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/manifests/plugin-sandbox-lifecycle.demo.json').json()\"" },
-  { run = "bun run demos/scripts/run_sandbox_lifecycle_demo.ts" },
+  { run = "oxide exec -- bun run demos/scripts/run_sandbox_lifecycle_demo.ts" },
   { run = "bun -e \"await Bun.file('demos/receipts/plugin-sandbox-lifecycle.receipt.json').json()\"" },
 ]
 
@@ -31,7 +31,7 @@ run = [
   { run = "bun -e \"await Bun.file('demos/templates/demo-receipt.example.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/coverage-matrix.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/manifests/runtime-recovery-inspector.demo.json').json()\"" },
-  { run = "bun run demos/scripts/run_runtime_recovery_inspector_demo.ts" },
+  { run = "oxide exec -- bun run demos/scripts/run_runtime_recovery_inspector_demo.ts" },
   { run = "bun -e \"await Bun.file('demos/receipts/runtime-recovery-inspector.receipt.json').json()\"" },
 ]
 
@@ -48,7 +48,7 @@ run = [
   { run = "bun -e \"await Bun.file('demos/templates/demo-receipt.example.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/coverage-matrix.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/manifests/hardware-topology-diagnostics.demo.json').json()\"" },
-  { run = "bun run demos/scripts/run_hardware_topology_diagnostics_demo.ts" },
+  { run = "oxide exec -- bun run demos/scripts/run_hardware_topology_diagnostics_demo.ts" },
   { run = "bun -e \"await Bun.file('demos/receipts/hardware-topology-diagnostics.receipt.json').json()\"" },
 ]
 
@@ -65,7 +65,7 @@ run = [
   { run = "bun -e \"await Bun.file('demos/templates/demo-receipt.example.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/coverage-matrix.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/manifests/graph-execution-inspector.demo.json').json()\"" },
-  { run = "bun run demos/scripts/run_graph_execution_inspector_demo.ts" },
+  { run = "oxide exec -- bun run demos/scripts/run_graph_execution_inspector_demo.ts" },
   { run = "bun -e \"await Bun.file('demos/receipts/graph-execution-inspector.receipt.json').json()\"" },
 ]
 
@@ -82,7 +82,7 @@ run = [
   { run = "bun -e \"await Bun.file('demos/templates/demo-receipt.example.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/coverage-matrix.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/manifests/dsp-processing-lab.demo.json').json()\"" },
-  { run = "bun run demos/scripts/run_dsp_processing_lab_demo.ts" },
+  { run = "oxide exec -- bun run demos/scripts/run_dsp_processing_lab_demo.ts" },
   { run = "bun -e \"await Bun.file('demos/receipts/dsp-processing-lab.receipt.json').json()\"" },
 ]
 
@@ -101,6 +101,6 @@ run = [
   { run = "bun -e \"await Bun.file('demos/templates/demo-receipt.example.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/coverage-matrix.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/manifests/analysis-feature-inspector.demo.json').json()\"" },
-  { run = "bun run demos/scripts/run_analysis_feature_inspector_demo.ts" },
+  { run = "oxide exec -- bun run demos/scripts/run_analysis_feature_inspector_demo.ts" },
   { run = "bun -e \"await Bun.file('demos/receipts/analysis-feature-inspector.receipt.json').json()\"" },
 ]

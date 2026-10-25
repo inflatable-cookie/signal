@@ -80,7 +80,7 @@ $RECYCLE.BIN/
 .btca
 
 # Rust
-target/
+target
 
 
 .dsp_cache
@@ -92,3 +92,4 @@ target/
 
 # Effigy release state, local to a prepare run
 .release-prepared.json
+/.oxide-outputs/

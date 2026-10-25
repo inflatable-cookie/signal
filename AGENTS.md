@@ -74,3 +74,18 @@ Rust source, manifests, build files, tests, and related docs follow the
 repository-owned quality profile and deviations in `docs/knowledge/contracts/`.
 Re-enter that profile at task start and batch closeout. Preserve unrelated work.
 An explicit quality audit uses the audit route, not everyday authoring.
+
+<!-- oxide:begin -->
+<!-- oxide:workspaces: . -->
+## Rust commands: use `oxide`
+
+Covers Cargo workspaces `.`, relative to this file's folder.
+
+- Write `oxide` wherever you would write `cargo`: `oxide check`, `oxide test`, `oxide run -- <args>`, `oxide add <crate>`.
+- Profiles: `quick` (default), `--profile debug` for a debugger, `--release`. Oxide places build output, so it refuses `--target-dir`.
+- A tool that runs Cargo itself (Tauri CLI, npm or bun scripts): `oxide exec -- <command>`.
+- A `waiting for …` line means another build holds a slot; let it wait. `oxide status` shows the pool, slots and waits.
+- Use `oxide clean`, not `cargo clean`.
+
+Managed by `oxide init`; edits between these markers are replaced.
+<!-- oxide:end -->

@@ -18,7 +18,7 @@ written. Terms in *italics* are in the [glossary](./glossary.md).
 ```bash
 git clone git@github.com:inflatable-cookie/signal.git
 cd signal
-cargo build --workspace        # first build; grab a coffee
+oxide build --workspace        # first build; grab a coffee
 ```
 
 ## 1. First sound: a 440 Hz tone
@@ -28,7 +28,7 @@ The shortest path from zero to audio is the `tone` example in
 a two-second 440 Hz sine.
 
 ```bash
-cargo run -p signal-hardware-cpal --example tone
+oxide run -p signal-hardware-cpal --example tone
 ```
 
 What you should see:
@@ -106,7 +106,7 @@ output — and runs it inside the real audio callback while a counting allocator
 proves the callback never allocates.
 
 ```bash
-cargo run -p signal-render-plane --example render_soak
+oxide run -p signal-render-plane --example render_soak
 ```
 
 The key shapes, from `crates/signal-render-plane/examples/render_soak.rs`:
@@ -170,7 +170,7 @@ from `signal-primitives`.
 ### Loudness (LUFS, true peak, range)
 
 ```bash
-cargo run -p signal-analysis-loudness --example offline_loudness_demo
+oxide run -p signal-analysis-loudness --example offline_loudness_demo
 ```
 
 This synthesizes a 1 kHz sine and measures it (the source is 60 lines —
@@ -197,7 +197,7 @@ println!("true_peak_dbtp={:.3}", result.true_peak_dbtp);
 The rhythm crate can read a WAV file directly:
 
 ```bash
-cargo run -p signal-analysis-rhythm --example file_rhythm_probe -- path/to/your.wav
+oxide run -p signal-analysis-rhythm --example file_rhythm_probe -- path/to/your.wav
 ```
 
 It prints BPM, confidence, tempo candidates, and beat positions. The same
@@ -268,7 +268,7 @@ The rules in one breath:
 - What the runtime/graph crates expose today:
   [Graph and Runtime Feature Reference](../knowledge/architecture/graph-runtime-feature-reference.md)
 - Plugin discovery (CLAP/VST3/AU/LV2): host-local example
-  `cargo run -p signal-host-local --example signal_host_local_plugin_capability_scan`
+  `oxide run -p signal-host-local --example signal_host_local_plugin_capability_scan`
 - The transparent (faithful) stretch renderer: `OfflineHighQualityStretcher`,
   documented in the
   [time-stretch synthesis doc](../knowledge/architecture/offline-time-stretch-synthesis.md)

@@ -14,6 +14,6 @@ run = [
   { run = "bun -e \"await Bun.file('demos/templates/demo-receipt.example.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/coverage-matrix.json').json()\"" },
   { run = "bun -e \"await Bun.file('demos/manifests/macos-au-coreaudio-boundary.demo.json').json()\"" },
-  { run = "bun run demos/scripts/run_macos_au_coreaudio_boundary_demo.ts" },
+  { run = "oxide exec -- bun run demos/scripts/run_macos_au_coreaudio_boundary_demo.ts" },
   { run = "bun -e \"await Bun.file('demos/receipts/macos-au-coreaudio-boundary.receipt.json').json()\"" },
 ]

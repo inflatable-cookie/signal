@@ -46,12 +46,12 @@ than by one analyzer crate:
 
 ## Current Harness Entry Points
 
-- `cargo test -p signal-analysis harness -- --nocapture`
-- `cargo test -p signal-analysis-rhythm harness -- --nocapture`
-- `cargo test -p signal-analysis-tonal harness -- --nocapture`
-- `cargo test -p signal-analysis-character harness -- --nocapture`
-- `cargo test -p signal-analysis-loudness harness -- --nocapture`
-- `cargo test -p signal-analysis-embed harness -- --nocapture`
+- `oxide test -p signal-analysis harness -- --nocapture`
+- `oxide test -p signal-analysis-rhythm harness -- --nocapture`
+- `oxide test -p signal-analysis-tonal harness -- --nocapture`
+- `oxide test -p signal-analysis-character harness -- --nocapture`
+- `oxide test -p signal-analysis-loudness harness -- --nocapture`
+- `oxide test -p signal-analysis-embed harness -- --nocapture`
 - `effigy acceptance:analysis`
 
 ## Frozen Policy Manifests

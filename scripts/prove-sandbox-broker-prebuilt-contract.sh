@@ -9,7 +9,7 @@ prove_repo_root=$(cd "$(dirname "$0")/.." && pwd)
 cd "$prove_repo_root"
 
 printf '== missing-env diagnostic ==\n'
-cargo test -p signal-runtime \
+oxide test -p signal-runtime \
   sandbox_broker_support::tests::spawn_from_env_reports_actionable_missing_command \
   -- --exact --nocapture
 

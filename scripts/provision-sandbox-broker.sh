@@ -38,12 +38,12 @@ printf 'provisioning signal-plugin-sandbox (%s) into %s\n' \
   "$broker_profile" "$broker_target_dir" >&2
 
 if [[ ${#broker_profile_args[@]} -eq 0 ]]; then
-  cargo build \
+  oxide exec -- cargo build \
     -p signal-plugin-sandbox \
     --manifest-path "$broker_repo_root/Cargo.toml" \
     --target-dir "$broker_target_dir"
 else
-  cargo build \
+  oxide exec -- cargo build \
     -p signal-plugin-sandbox \
     --manifest-path "$broker_repo_root/Cargo.toml" \
     --target-dir "$broker_target_dir" \

@@ -110,12 +110,12 @@ effigy qa:docs
 Rust workspace directly:
 
 ```bash
-cargo build --workspace
-cargo test --workspace
-cargo clippy --workspace --all-targets
-cargo fmt --all --check
-cargo run -p signal-hardware-cpal --example tone
-cargo run -p signal-render-plane --example render_soak
+oxide build --workspace
+oxide test --workspace
+oxide clippy --workspace --all-targets
+oxide fmt --all --check
+oxide run -p signal-hardware-cpal --example tone
+oxide run -p signal-render-plane --example render_soak
 ```
 
 CI (`.github/workflows/ci.yml`) enforces build, test, fmt, and clippy on

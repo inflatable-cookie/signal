@@ -38,7 +38,7 @@ committed.
 Generate the deterministic draft-vs-OfflineHighQuality report:
 
 ```bash
-cargo run -p signal-dsp-stretch-evidence --bin stretch-corpus-report -- \
+oxide run -p signal-dsp-stretch-evidence --bin stretch-corpus-report -- \
   --report-name stretch-corpus-v1-local \
   --projection-epoch projection:local \
   --listening-source-manifest target/stretch-corpus-fma-review-seed.tsv \
@@ -93,7 +93,7 @@ Add optional external rendered-output comparisons with repeated
 `--external-benchmark-render` groups:
 
 ```bash
-cargo run -p signal-dsp-stretch-evidence --bin stretch-corpus-report -- \
+oxide run -p signal-dsp-stretch-evidence --bin stretch-corpus-report -- \
   --report-name stretch-corpus-v1-local \
   --projection-epoch projection:local \
   --external-benchmark-tool rubberband-cli \
@@ -112,7 +112,7 @@ on Rubber Band.
 The FMA large bundle can seed local-only listening candidates:
 
 ```bash
-cargo run -p signal-dsp-stretch-evidence --bin fma-stretch-corpus-select -- \
+oxide run -p signal-dsp-stretch-evidence --bin fma-stretch-corpus-select -- \
   --fma-root /Users/tom/Downloads/FMA \
   --per-family 5 \
   --output target/stretch-corpus-fma-selection.md \
