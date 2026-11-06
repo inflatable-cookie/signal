@@ -37,7 +37,7 @@ closeout, and outcomes. Triage notes are leads, not authority.
   changes. Rust audit work records scope and findings before repair.
 - Keep knowledge current in the same change as behavior. One owner per fact.
   Record unresolved questions in `docs/knowledge/questions.md`.
-- File papercuts in Queue with `papercut.add` (see the `northstar`
+- File papercuts in Queue with `papercut.add` (see the Nucleus
   skill). The repository holds no papercut file or triage folder.
 - Write plainly; see `docs/policy/internal-writing-style.md`.
 
