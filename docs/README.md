@@ -15,7 +15,7 @@ The transparent stretch renderer and exact-ratio creative `Dream` and
 | System shape, crates, shipped features | [Architecture](knowledge/architecture/README.md) |
 | Durable behavior and policy | [Contracts](knowledge/contracts/contract-index.md) |
 | Release procedure | [Release](knowledge/contracts/release.md) |
-| Open questions and retired concepts | [Knowledge index](knowledge/README.md) |
+| Open questions | [Knowledge index](knowledge/README.md) |
 | Priorities and product pull | Plan |
 | Consumer setup and examples | [Reference](reference/consuming-signal.md) and [quick start](reference/quick-start.md) |
 | Source studies and frozen evidence | [Research](research/master-index.md) |

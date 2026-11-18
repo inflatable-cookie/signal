@@ -10,7 +10,6 @@ Each topic has one owner. Other files link here instead of repeating rules.
 | Repository work rules | [AGENTS.md](../../AGENTS.md) |
 | Release procedure and consumer packaging | [Release contract](contracts/release.md) |
 | Open decisions | [Questions](questions.md) |
-| Removed concepts and replacements | [Retirements](retired.toml) |
 
 User guides remain under `docs/reference/`. Source studies and cited evidence
 remain under `docs/research/`; they do not authorize work. Intent is in
