@@ -66,7 +66,7 @@ tool consumes output. Do not add a current-directory repo override.
 
 Run targeted checks once per task. `effigy validate` builds, formats, and
 compile-checks; select only the checks needed for the changed code.
-After docs changes run `effigy qa:docs`, which includes `qa:northstar`.
+After docs changes run `effigy qa:docs`.
 `qa:docs:agent-defaults` remains a separate check. Queue runs the full
 `effigy qa` board on `main` at milestones.
 

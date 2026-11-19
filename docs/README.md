@@ -28,4 +28,4 @@ and product evidence.
 ## Validation
 
 Run `effigy qa` for the full local board. For documentation changes, run
-`effigy qa:docs` and `effigy qa:northstar`.
+`effigy qa:docs`.
