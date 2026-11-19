@@ -7,7 +7,7 @@ to downstream products.
 
 Read [docs/README.md](docs/README.md), then the owning file in
 [docs/knowledge/](docs/knowledge/README.md). Intent is in
-`plan.md` (Git history). Queue holds tasks, briefs, status, review,
+`plan.md` (Git history). Nucleus holds tasks, briefs, status, review,
 closeout, and outcomes. Triage notes are leads, not authority.
 
 ## Boundaries
@@ -31,13 +31,13 @@ closeout, and outcomes. Triage notes are leads, not authority.
 
 ## Work
 
-- Use the current checkout for normal work. Queue supplies worker workspaces
+- Use the current checkout for normal work. Nucleus supplies worker workspaces
   and briefs; do not create repository task cards or handoff files.
 - Work in meaningful batches. A docs review does not authorize product-code
   changes. Rust audit work records scope and findings before repair.
 - Keep knowledge current in the same change as behavior. One owner per fact.
   Record unresolved questions in `docs/knowledge/questions.md`.
-- File papercuts in Queue with `papercut.add` (see the Nucleus
+- File papercuts in Nucleus with `papercut.add` (see the Nucleus
   skill). The repository holds no papercut file or triage folder.
 - Write plainly; see `docs/policy/internal-writing-style.md`.
 
@@ -67,7 +67,7 @@ tool consumes output. Do not add a current-directory repo override.
 Run targeted checks once per task. `effigy validate` builds, formats, and
 compile-checks; select only the checks needed for the changed code.
 After docs changes run `effigy qa:docs`.
-`qa:docs:agent-defaults` remains a separate check. Queue runs the full
+`qa:docs:agent-defaults` remains a separate check. Nucleus runs the full
 `effigy qa` board on `main` at milestones.
 
 Rust source, manifests, build files, tests, and related docs follow the
