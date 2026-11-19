@@ -21,7 +21,7 @@ The transparent stretch renderer and exact-ratio creative `Dream` and
 | Source studies and frozen evidence | [Research](research/master-index.md) |
 | Unresolved leads | Triage |
 
-Task briefs, validation results, review, and closeout live in Queue. Git
+Task briefs, validation results, review, and closeout live in Nucleus. Git
 history holds removed process records. The repository records current truth
 and product evidence.
 
