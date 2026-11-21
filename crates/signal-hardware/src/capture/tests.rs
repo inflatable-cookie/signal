@@ -40,7 +40,7 @@ fn monitor_session_duplicates_mono_input_to_stereo() {
         samples.len()
     );
     assert!(samples.len().is_multiple_of(2), "stereo interleave");
-    for frame in samples.chunks_exact(2) {
+    for frame in samples.as_chunks::<2>().0 {
         assert_eq!(frame[0], frame[1], "mono input duplicates to both channels");
     }
     // The tone actually flowed (not silence).
@@ -90,7 +90,7 @@ fn capture_with_monitor_tees_input_to_both_wav_and_sink() {
         samples.len(),
         report.frames,
     );
-    for frame in samples.chunks_exact(2) {
+    for frame in samples.as_chunks::<2>().0 {
         assert_eq!(frame[0], frame[1]);
     }
     assert!(samples.iter().any(|sample| sample.abs() > 0.4));

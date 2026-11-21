@@ -1,20 +1,18 @@
-# Pinned, not floating. `channel = "stable"` let a local toolchain go stale
-# while CI installed whatever stable was current, so the release gates and CI
-# ran different compilers: 1.96 locally against 1.97 on the runner. The gates
-# passed and CI failed on three lints that only the newer clippy knows. Pinning
-# makes "the gates pass" and "CI passes" the same claim.
+# Pinned, not floating. A floating `stable` let local gates and CI run different
+# compilers, so the gates could pass while CI failed on lints from a newer
+# Clippy. Pinning makes "the gates pass" and "CI passes" the same claim.
 #
 # Bumping: change the version, run `effigy release gates`, fix what the new
 # compiler finds, and push the fix with the bump.
 #
 # This is not the MSRV. `rust-version` in Cargo.toml declares the floor --
-# 1.95 since 2026-08-06 -- and `effigy release:floor` verifies it by running
+# 1.97.1 since 2026-11-21 -- and `effigy release:floor` verifies it by running
 # clippy and the full suite under the toolchain pinned in
 # `release-baselines/rust-toolchains.env`. CI still builds only on the version
 # below, so the floor claim is made at release time and nowhere else.
 #
-# The two are independent and both real: 1.95's clippy denies lints 1.97.1 does
-# not, and vice versa, so code has to satisfy both.
+# The two are independent and both real: clippy at the pinned toolchain can
+# differ from clippy at the MSRV, so code has to satisfy both.
 [toolchain]
-channel = "1.97.1"
+channel = "1.100.0"
 components = ["rustfmt", "clippy"]

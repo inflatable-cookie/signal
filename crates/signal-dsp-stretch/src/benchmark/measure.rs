@@ -559,7 +559,7 @@ fn stereo_image_stats(interleaved_samples: &[Sample]) -> StereoImageStats {
     let mut cross_sum = 0.0f64;
     let mut mid_square_sum = 0.0f64;
     let mut side_square_sum = 0.0f64;
-    for frame in interleaved_samples.chunks_exact(2) {
+    for frame in interleaved_samples.as_chunks::<2>().0 {
         let left = frame[0] as f64;
         let right = frame[1] as f64;
         left_square_sum += left * left;

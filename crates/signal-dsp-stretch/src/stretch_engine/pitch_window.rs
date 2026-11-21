@@ -38,7 +38,7 @@ pub(crate) fn pitch_shift_interleaved_stereo_to_nominal_rate(
 
     let mut mid = Vec::with_capacity(frame_count);
     let mut side = Vec::with_capacity(frame_count);
-    for frame in input[..frame_count * 2].chunks_exact(2) {
+    for frame in input[..frame_count * 2].as_chunks::<2>().0 {
         let left = frame[0];
         let right = frame[1];
         mid.push((left + right) * 0.5);
@@ -198,7 +198,9 @@ pub(crate) fn short_window_analysis_hop_for_path(path: OfflineHighQualityPath) -
 
 pub(crate) fn downmix_interleaved_stereo_to_mono(samples: &[Sample]) -> Vec<Sample> {
     samples
-        .chunks_exact(2)
+        .as_chunks::<2>()
+        .0
+        .iter()
         .map(|frame| (frame[0] + frame[1]) * 0.5)
         .collect()
 }

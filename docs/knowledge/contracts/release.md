@@ -20,7 +20,7 @@ in `Cargo.toml`, `CHANGELOG.md`, and the contract set define the claim.
 3. Verify a clean source consumer builds from the tagged Git address without
    sibling checkouts. `effigy release:source-consumer` performs that proof.
    `effigy release:floor` proves the declared Rust floor. The current floor
-   is Rust 1.95 from `v0.1.1`; `v0.1.0` used 1.90.
+   is Rust 1.97.1; `v0.1.1` declared 1.95 and `v0.1.0` declared 1.90.
 4. Use Effigy's configured release flow for preparation and execution only
    after explicit operator authorization. Do not bypass a failed gate or
    re-tag a failed release; repair and use the next patch version.

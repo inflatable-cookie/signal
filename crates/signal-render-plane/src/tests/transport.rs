@@ -79,7 +79,9 @@ fn transport_stop_ramps_out_instead_of_stepping() {
     let tail = &frames[1000..];
     assert!(tail.iter().all(|sample| *sample == 0.0));
     let max_step = frames
-        .chunks_exact(2)
+        .as_chunks::<2>()
+        .0
+        .iter()
         .map(|frame| frame[0])
         .collect::<Vec<_>>()
         .windows(2)

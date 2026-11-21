@@ -49,9 +49,9 @@ soak = "effigy test:soak"
 # `floor` runs clippy AND the full suite at the MSRV, not `cargo check`.
 # Longhorn's floor violation appeared only under `--all-targets` -- a
 # dev-dependency pulled the feature that compiled the offending build script --
-# and a bare check passed and gave false confidence. On signal's first run it
-# immediately found a real one: 1.95's clippy denies a `collapsible_match` that
-# 1.97.1 does not.
+# and a bare check passed and gave false confidence. Signal's initial floor run
+# found a real one: 1.95's Clippy denied a `collapsible_match` that the then-
+# pinned 1.97.1 did not.
 #
 # `source-consumer` is the gate for the failure mode that path-based
 # co-development hides: every sibling checkout is present locally, so a manifest

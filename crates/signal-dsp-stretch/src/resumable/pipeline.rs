@@ -103,8 +103,7 @@ impl ResumableOfflineStretch {
             if self.pending_crop_frames > 0 {
                 self.pending_crop_frames -= 1;
             } else {
-                for channel in 0..self.config.channels {
-                    let state = &self.channels[channel];
+                for state in self.channels.iter().take(self.config.channels) {
                     let weight = state.normalization_ring[ring_frame];
                     let sample = if weight > 1.0e-3 {
                         state.output_ring[ring_frame] / weight
