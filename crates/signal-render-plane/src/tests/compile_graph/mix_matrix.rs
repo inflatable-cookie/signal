@@ -29,27 +29,45 @@ fn pan_matrix_places_a_lane_in_the_stereo_field() {
     };
 
     let hard_left = render_with_pan(-1.0);
-    assert!(hard_left.chunks_exact(2).any(|frame| frame[0].abs() > 0.1));
-    assert!(hard_left.chunks_exact(2).all(|frame| frame[1] == 0.0));
+    assert!(hard_left
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .any(|frame| frame[0].abs() > 0.1));
+    assert!(hard_left
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .all(|frame| frame[1] == 0.0));
 
     let hard_right = render_with_pan(1.0);
     assert!(hard_right
-        .chunks_exact(2)
+        .as_chunks::<2>()
+        .0
+        .iter()
         .all(|frame| frame[0].abs() < 1e-6));
-    assert!(hard_right.chunks_exact(2).any(|frame| frame[1].abs() > 0.1));
+    assert!(hard_right
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .any(|frame| frame[1].abs() > 0.1));
 
     let center = render_with_pan(0.0);
     let minus_3db = std::f32::consts::FRAC_1_SQRT_2;
-    for frame in center.chunks_exact(2) {
+    for frame in center.as_chunks::<2>().0 {
         assert!((frame[0] - frame[1]).abs() < 1e-6);
     }
     // Center sits -3 dB against the hard-left reference.
     let left_peak = hard_left
-        .chunks_exact(2)
+        .as_chunks::<2>()
+        .0
+        .iter()
         .map(|frame| frame[0].abs())
         .fold(0.0f32, f32::max);
     let center_peak = center
-        .chunks_exact(2)
+        .as_chunks::<2>()
+        .0
+        .iter()
         .map(|frame| frame[0].abs())
         .fold(0.0f32, f32::max);
     assert!((center_peak - left_peak * minus_3db).abs() < 1e-3);
@@ -87,11 +105,13 @@ fn mono_lane_upmixes_to_stereo_through_the_default_adapter() {
     let mut frames = [0.0f32; 512];
     executor.render_block(&mut frames);
     let peak = frames
-        .chunks_exact(2)
+        .as_chunks::<2>()
+        .0
+        .iter()
         .map(|frame| frame[0].abs())
         .fold(0.0f32, f32::max);
     assert!(peak > 0.1, "mono lane should be audible after upmix");
-    for frame in frames.chunks_exact(2) {
+    for frame in frames.as_chunks::<2>().0 {
         // Equal distribution at -3 dB: both channels identical.
         assert_eq!(frame[0], frame[1]);
     }
@@ -165,7 +185,12 @@ fn wider_master_downmixes_at_the_hardware_boundary() {
     reference_executor.render_block(&mut reference);
     // Boundary fold (4→2): L = (c0 + c2)/2 = (1.0 + 0.25)/2 = 0.625×tone,
     // R = (c1 + c3)/2 = (0.5 + 0.75)/2 = 0.625×tone.
-    for (frame, reference_frame) in downmixed.chunks_exact(2).zip(reference.chunks_exact(2)) {
+    for (frame, reference_frame) in downmixed
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .zip(reference.as_chunks::<2>().0.iter())
+    {
         let tone = reference_frame[0];
         assert!((frame[0] - tone * 0.625).abs() < 1e-5);
         assert!((frame[1] - tone * 0.625).abs() < 1e-5);
@@ -219,6 +244,14 @@ fn narrower_master_leaves_extra_stream_channels_silent() {
 
     let mut frames = [0.0f32; 512];
     executor.render_block(&mut frames);
-    assert!(frames.chunks_exact(2).any(|frame| frame[0].abs() > 0.1));
-    assert!(frames.chunks_exact(2).all(|frame| frame[1] == 0.0));
+    assert!(frames
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .any(|frame| frame[0].abs() > 0.1));
+    assert!(frames
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .all(|frame| frame[1] == 0.0));
 }

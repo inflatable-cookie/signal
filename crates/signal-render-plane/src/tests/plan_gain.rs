@@ -76,7 +76,7 @@ fn gain_automation_follows_the_envelope_sample_accurately() {
     let mut frames = [0.0f32; 512];
     for _ in 0..75 {
         executor.render_block(&mut frames);
-        output.extend(frames.chunks_exact(2).map(|frame| frame[0]));
+        output.extend(frames.as_chunks::<2>().0.iter().map(|frame| frame[0]));
     }
     // At frame 9_600 the gain is 1.0: sample value 0.5 * 1.0.
     let mid = output[9_600];
@@ -305,7 +305,9 @@ fn plan_swap_inherits_smoothed_gain_without_stepping() {
     let mut frames = [0.0f32; 1024];
     executor.render_block(&mut frames);
     let max_step = frames
-        .chunks_exact(2)
+        .as_chunks::<2>()
+        .0
+        .iter()
         .map(|frame| frame[0])
         .collect::<Vec<_>>()
         .windows(2)

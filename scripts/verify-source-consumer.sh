@@ -111,7 +111,7 @@ name = "signal-source-consumer"
 version = "0.0.0"
 edition = "2024"
 publish = false
-rust-version = "${SIGNAL_GENERAL_MSRV%.*}"
+rust-version = "${SIGNAL_GENERAL_MSRV}"
 
 [dependencies]
 EOF

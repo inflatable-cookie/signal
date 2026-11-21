@@ -136,10 +136,8 @@ impl BlockDispatch {
         }
 
         let mut samples = Vec::with_capacity(sample_count);
-        for chunk in region_bytes[..expected_bytes].chunks_exact(4) {
-            samples.push(f32::from_le_bytes(
-                chunk.try_into().map_err(|_| "audio sample decode")?,
-            ));
+        for chunk in region_bytes[..expected_bytes].as_chunks::<4>().0 {
+            samples.push(f32::from_le_bytes(*chunk));
         }
         AudioBlock::new(self.header.channel_count, self.header.frame_count, samples)
     }

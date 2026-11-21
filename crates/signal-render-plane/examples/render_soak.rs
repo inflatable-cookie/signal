@@ -152,7 +152,7 @@ fn main() {
         let phase_step = std::f32::consts::TAU * 330.0 / 48_000.0;
         let mut phase = 0.0f32;
         while !feeder_stop.load(Ordering::Relaxed) {
-            for frame in chunk.chunks_exact_mut(2) {
+            for frame in chunk.as_chunks_mut::<2>().0 {
                 let sample = 0.2 * phase.sin();
                 frame[0] = sample;
                 frame[1] = sample;

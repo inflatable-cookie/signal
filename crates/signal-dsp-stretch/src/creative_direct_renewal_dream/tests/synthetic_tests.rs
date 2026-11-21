@@ -75,7 +75,7 @@
                 finite_exact_endpoints(&stereo_output, target_frames, 2);
                 assert_eq!(render(stereo_request).unwrap(), stereo_output);
                 assert!(stereo_output
-                    .chunks_exact(2)
+                    .as_chunks::<2>().0.iter()
                     .all(|frame| frame[0].to_bits() == frame[1].to_bits()));
             }
         }

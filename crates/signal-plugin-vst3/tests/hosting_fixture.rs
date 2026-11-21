@@ -256,6 +256,30 @@ fn discovery_reports_the_fixture_with_an_empty_scan_time_inventory() {
 
 #[test]
 fn discovery_falls_back_to_factory_when_moduleinfo_is_missing() {
+    const FIXTURE_ROOT_ENV: &str = "SIGNAL_VST3_FALLBACK_FIXTURE_ROOT";
+
+    if let Some(fixture_root) = std::env::var_os(FIXTURE_ROOT_ENV) {
+        let adapter = Vst3HostAdapter::default();
+        let batch = adapter.discover_plugins_for_roots_with_diagnostics(
+            current_vst3_platform(),
+            &[fixture_root.to_string_lossy().into_owned()],
+        );
+
+        assert_eq!(
+            batch.discovered.len(),
+            1,
+            "diagnostics: {:#?}",
+            batch.diagnostics
+        );
+        let plugin = &batch.discovered[0];
+        assert_eq!(
+            plugin.plugin_type_id.0,
+            "plugin:vst3:signal-fixture-fallback"
+        );
+        assert_eq!(plugin.class_id, VST3_FIXTURE_CLASS_ID_HEX);
+        return;
+    }
+
     if !rustc_available() {
         eprintln!("skipping: rustc unavailable for the VST3 fixture");
         return;
@@ -275,17 +299,25 @@ fn discovery_falls_back_to_factory_when_moduleinfo_is_missing() {
     )
     .expect("moduleinfo should be removable");
 
-    let adapter = Vst3HostAdapter::default();
-    let discovered = adapter.discover_plugins_for_roots(
-        current_vst3_platform(),
-        &[directory.path.display().to_string()],
+    // Cargo may run this test from an isolated directory that is not adjacent
+    // to the helper binary. Use Cargo's exact binary path in the child test
+    // process instead of changing the environment for parallel tests.
+    let output = std::process::Command::new(std::env::current_exe().expect("test executable"))
+        .args([
+            "--exact",
+            "discovery_falls_back_to_factory_when_moduleinfo_is_missing",
+        ])
+        .env(FIXTURE_ROOT_ENV, &directory.path)
+        .env(
+            "SIGNAL_VST3_SCAN_HELPER",
+            env!("CARGO_BIN_EXE_signal-vst3-scan-helper"),
+        )
+        .output()
+        .expect("fallback discovery subprocess should start");
+    assert!(
+        output.status.success(),
+        "fallback discovery subprocess failed\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr),
     );
-
-    assert_eq!(discovered.len(), 1);
-    let plugin = &discovered[0];
-    assert_eq!(
-        plugin.plugin_type_id.0,
-        "plugin:vst3:signal-fixture-fallback"
-    );
-    assert_eq!(plugin.class_id, VST3_FIXTURE_CLASS_ID_HEX);
 }

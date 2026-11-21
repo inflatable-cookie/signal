@@ -139,7 +139,7 @@ fn public_cyclic_preserves_linked_stereo_relations() {
                 CreativeStretchCharacter::Cyclic,
             ))
             .expect("public Cyclic linked-stereo render");
-            for frame in output.chunks_exact(2) {
+            for frame in output.as_chunks::<2>().0 {
                 let relation_error = if anti_phase {
                     frame[0] + frame[1]
                 } else {

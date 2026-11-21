@@ -26,9 +26,10 @@ That is no longer taken on trust: `effigy release:source-consumer` builds exactl
 such a checkout against the release commit at every release and asserts every
 `signal-*` package resolves from a git source rather than a path.
 
-**Rust floor: `1.95` from `v0.1.1`** (`1.90` at `v0.1.0`). Verified at release
-time by `effigy release:floor`, which runs clippy and the full suite under that
-toolchain -- not `cargo check`. A consumer below `1.95` should stay on `v0.1.0`.
+**Current Rust floor: `1.97.1`** (the `v0.1.1` release declared `1.95`; `v0.1.0`
+declared `1.90`). Verified at release time by `effigy release:floor`, which
+runs clippy and the full suite under that toolchain -- not `cargo check`. A
+consumer below `1.97.1` should use an older Signal release that supports it.
 Colleagues and CI have no override file, so they resolve the tag from git and
 there is nothing to coordinate.
 

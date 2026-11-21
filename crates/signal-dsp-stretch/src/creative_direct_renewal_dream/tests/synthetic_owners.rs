@@ -288,7 +288,7 @@
         fn channel_pair(interleaved: &[f32]) -> (Vec<f32>, Vec<f32>) {
             let mut left = Vec::with_capacity(interleaved.len() / 2);
             let mut right = Vec::with_capacity(interleaved.len() / 2);
-            for frame in interleaved.chunks_exact(2) { left.push(frame[0]); right.push(frame[1]); }
+            for frame in interleaved.as_chunks::<2>().0 { left.push(frame[0]); right.push(frame[1]); }
             (left, right)
         }
 
@@ -319,12 +319,12 @@
                 else { 10.0 * (right_energy[energy_index] / left_energy[energy_index]).log10() }
             });
             let low_fraction = (left_energy[1] + right_energy[1]) / (left_energy[0] + right_energy[0]);
-            let side_energy = interleaved.chunks_exact(2).map(|frame| ((frame[0] as f64 - frame[1] as f64) * 0.5).powi(2)).sum::<f64>();
+            let side_energy = interleaved.as_chunks::<2>().0.iter().map(|frame| ((frame[0] as f64 - frame[1] as f64) * 0.5).powi(2)).sum::<f64>();
             (balances, low_fraction, side_energy)
         }
 
         fn time_relation_residual(fixture: StereoFixture, output: &[f32], _space: f32) -> f64 {
-            output.chunks_exact(2).map(|frame| match fixture {
+            output.as_chunks::<2>().0.iter().map(|frame| match fixture {
                 StereoFixture::Duplicate | StereoFixture::Base | StereoFixture::CommonNegated => (frame[0] - frame[1]).abs() as f64,
                 StereoFixture::AntiPhase => (frame[0] + frame[1]).abs() as f64,
                 _ => 0.0,

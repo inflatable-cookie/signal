@@ -194,11 +194,15 @@ fn realtime_preview_callback_state_processes_linked_stereo_stream() {
     }
 
     let out_left = first_output
-        .chunks_exact(2)
+        .as_chunks::<2>()
+        .0
+        .iter()
         .map(|frame| frame[0])
         .collect::<Vec<_>>();
     let out_right = first_output
-        .chunks_exact(2)
+        .as_chunks::<2>()
+        .0
+        .iter()
         .map(|frame| frame[1])
         .collect::<Vec<_>>();
 

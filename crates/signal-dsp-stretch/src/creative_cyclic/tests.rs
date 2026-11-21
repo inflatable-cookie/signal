@@ -84,7 +84,7 @@ fn linked_stereo_preserves_duplicate_antiphase_and_common_negation() {
         }
         let output = render_continuous(request(&input, 2, mono.len() * 8, NEUTRAL_CYCLE_US))
             .expect("stereo render");
-        for frame in output.chunks_exact(2) {
+        for frame in output.as_chunks::<2>().0 {
             let error = if relation == "duplicate" {
                 frame[0] - frame[1]
             } else {
@@ -234,7 +234,7 @@ fn continuous_linked_relations_hold_at_interior_targets() {
         for target in [mono.len() * 5 / 2, mono.len() * 5, mono.len() * 15 / 2] {
             let output =
                 render_continuous(request(&input, 2, target, NEUTRAL_CYCLE_US)).expect("stereo");
-            for frame in output.chunks_exact(2) {
+            for frame in output.as_chunks::<2>().0 {
                 let residual = if relation == "duplicate" {
                     frame[0] - frame[1]
                 } else {

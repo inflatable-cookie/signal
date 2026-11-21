@@ -10,7 +10,7 @@ written. Terms in *italics* are in the [glossary](./glossary.md).
 ## Prerequisites
 
 - A Rust toolchain (the workspace pins its version in `rust-toolchain.toml`;
-  consumers need Rust `1.95`+, see [Consuming Signal](./consuming-signal.md)).
+  consumers need Rust `1.97.1`+, see [Consuming Signal](./consuming-signal.md)).
 - No audio hardware is required except for the first two examples, which play
   to your default output device. If none is available, those examples skip or
   fail loudly at stream open — the analysis and stretch examples run anywhere.

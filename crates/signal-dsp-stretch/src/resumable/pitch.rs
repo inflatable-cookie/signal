@@ -84,7 +84,7 @@ impl PitchStage {
             let frames = source.len() / 2;
             self.mid_scratch.clear();
             self.side_scratch.clear();
-            for frame in source[..frames * 2].chunks_exact(2) {
+            for frame in source[..frames * 2].as_chunks::<2>().0 {
                 self.mid_scratch.push((frame[0] + frame[1]) * 0.5);
                 self.side_scratch.push((frame[0] - frame[1]) * 0.5);
             }

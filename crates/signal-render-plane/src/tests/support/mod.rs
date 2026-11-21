@@ -41,7 +41,9 @@ pub(super) fn dc_clip(
 }
 pub(super) fn max_left_step(frames: &[f32]) -> f32 {
     frames
-        .chunks_exact(2)
+        .as_chunks::<2>()
+        .0
+        .iter()
         .map(|frame| frame[0])
         .collect::<Vec<_>>()
         .windows(2)
@@ -108,7 +110,9 @@ pub(super) fn render_notes_left(
     .expect("offline note render");
     output
         .master
-        .chunks_exact(2)
+        .as_chunks::<2>()
+        .0
+        .iter()
         .map(|frame| frame[0])
         .collect()
 }

@@ -119,7 +119,7 @@ pub(crate) fn transient_reset_phase_vocoder_linked_stereo(
 
     let mut mid = Vec::with_capacity(frame_count);
     let mut side = Vec::with_capacity(frame_count);
-    for frame in input_interleaved.chunks_exact(2) {
+    for frame in input_interleaved.as_chunks::<2>().0 {
         let left = frame[0];
         let right = frame[1];
         mid.push((left + right) * 0.5);
