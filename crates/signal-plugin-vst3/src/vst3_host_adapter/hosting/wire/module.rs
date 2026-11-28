@@ -152,20 +152,20 @@ pub(crate) mod macos_bundle {
 }
 
 #[cfg(not(target_os = "macos"))]
-pub(crate) fn entry_symbol(platform: Vst3HostPlatform) -> &'static [u8] {
+pub(crate) fn entry_symbol(platform: Vst3HostPlatform) -> &'static CStr {
     match platform {
-        Vst3HostPlatform::MacOs => b"bundleEntry\0",
-        Vst3HostPlatform::Linux => b"ModuleEntry\0",
-        Vst3HostPlatform::Windows => b"InitDll\0",
+        Vst3HostPlatform::MacOs => c"bundleEntry",
+        Vst3HostPlatform::Linux => c"ModuleEntry",
+        Vst3HostPlatform::Windows => c"InitDll",
     }
 }
 
 #[cfg(not(target_os = "macos"))]
-pub(crate) fn exit_symbol(platform: Vst3HostPlatform) -> &'static [u8] {
+pub(crate) fn exit_symbol(platform: Vst3HostPlatform) -> &'static CStr {
     match platform {
-        Vst3HostPlatform::MacOs => b"bundleExit\0",
-        Vst3HostPlatform::Linux => b"ModuleExit\0",
-        Vst3HostPlatform::Windows => b"ExitDll\0",
+        Vst3HostPlatform::MacOs => c"bundleExit",
+        Vst3HostPlatform::Linux => c"ModuleExit",
+        Vst3HostPlatform::Windows => c"ExitDll",
     }
 }
 
@@ -224,7 +224,7 @@ impl LoadedVst3Module {
                 }
             }
             let get_factory = library
-                .get::<GetPluginFactoryProc>(b"GetPluginFactory\0")
+                .get::<GetPluginFactoryProc>(c"GetPluginFactory")
                 .map_err(|_| Vst3HostingError::new("get_plugin_factory_missing"))?;
             let factory = get_factory();
             if factory.is_null() {
