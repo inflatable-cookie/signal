@@ -3,6 +3,7 @@ use signal_hardware::{InputStreamError, InputStreamSpec};
 
 use super::types::{InputChannelDescription, InputDeviceDescription};
 use super::CHANNEL_SELECTION_SCRATCH_SAMPLES;
+use crate::device_name;
 
 const COMMON_RATES_HZ: [u32; 6] = [44_100, 48_000, 88_200, 96_000, 176_400, 192_000];
 
@@ -12,7 +13,7 @@ const COMMON_RATES_HZ: [u32; 6] = [44_100, 48_000, 88_200, 96_000, 176_400, 192_
 pub fn default_input_device_name() -> Option<String> {
     cpal::default_host()
         .default_input_device()
-        .and_then(|device| device.name().ok())
+        .and_then(|device| device_name(&device))
 }
 
 /// Enumerate real input devices with their supported configurations.
@@ -25,7 +26,9 @@ pub fn enumerate_input_devices() -> Result<Vec<InputDeviceDescription>, InputStr
 
     let mut descriptions = Vec::new();
     for device in devices {
-        let Ok(name) = device.name() else { continue };
+        let Some(name) = device_name(&device) else {
+            continue;
+        };
         let Ok(default_config) = device.default_input_config() else {
             continue;
         };
@@ -35,10 +38,7 @@ pub fn enumerate_input_devices() -> Result<Vec<InputDeviceDescription>, InputStr
             for config in configs {
                 max_channels = max_channels.max(config.channels());
                 for rate in COMMON_RATES_HZ {
-                    if rate >= config.min_sample_rate().0
-                        && rate <= config.max_sample_rate().0
-                        && !rates.contains(&rate)
-                    {
+                    if config.contains_rate(rate) && !rates.contains(&rate) {
                         rates.push(rate);
                     }
                 }
@@ -54,7 +54,7 @@ pub fn enumerate_input_devices() -> Result<Vec<InputDeviceDescription>, InputStr
         descriptions.push(InputDeviceDescription {
             device_id: name.clone(),
             is_default: default_name.as_deref() == Some(name.as_str()),
-            default_sample_rate_hz: default_config.sample_rate().0,
+            default_sample_rate_hz: default_config.sample_rate(),
             default_channels: default_config.channels(),
             supported_sample_rates_hz: rates,
             max_channels,
@@ -91,11 +91,11 @@ pub(crate) fn negotiate_input_config(
             };
             let rate = spec
                 .sample_rate_hz
-                .clamp(config.min_sample_rate().0, config.max_sample_rate().0);
+                .clamp(config.min_sample_rate(), config.max_sample_rate());
             let distance = rate.abs_diff(spec.sample_rate_hz);
             let candidate = cpal::StreamConfig {
                 channels: config.channels(),
-                sample_rate: cpal::SampleRate(rate),
+                sample_rate: rate,
                 buffer_size: cpal::BufferSize::Default,
             };
             let score = (channel_distance, distance);
