@@ -11,6 +11,7 @@ use super::enumerate::{negotiate_input_config, validate_channel_indices};
 use super::stream::{copy_selected_channels, CpalInputStream};
 use super::types::CpalInputEndpoint;
 use super::{CHANNEL_SELECTION_SCRATCH_SAMPLES, STATE_FAULTED, STATE_RUNNING, STATE_STOPPED};
+use crate::{device_name, stream_error};
 
 /// Input backend over the host's default cpal device or one explicit endpoint.
 #[derive(Debug, Default)]
@@ -43,7 +44,7 @@ impl InputStreamBackend for CpalInputBackend {
         let endpoint = self.endpoint.clone();
         let state = Arc::new(AtomicU8::new(STATE_RUNNING));
         let thread_state = Arc::clone(&state);
-        let last_error: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+        let last_error: stream_error::ErrorSlot = Arc::new(Mutex::new(None));
         let thread_last_error = Arc::clone(&last_error);
         let latency_micros = Arc::new(AtomicU64::new(0));
         let thread_latency = Arc::clone(&latency_micros);
@@ -65,7 +66,7 @@ impl InputStreamBackend for CpalInputBackend {
                                 InputStreamError::new(format!("enumerate input devices: {error}"))
                             })?
                             .find(|device| {
-                                device.name().ok().as_deref() == Some(endpoint.device_id.as_str())
+                                device_name(device).as_deref() == Some(endpoint.device_id.as_str())
                             })
                             .ok_or_else(|| {
                                 InputStreamError::new(format!(
@@ -77,7 +78,7 @@ impl InputStreamBackend for CpalInputBackend {
                             .default_input_device()
                             .ok_or_else(|| InputStreamError::new("no default input device"))?,
                     };
-                    let device_name = device.name().ok();
+                    let device_name = device_name(&device);
                     let selected_channels = endpoint
                         .as_ref()
                         .map(|endpoint| endpoint.channel_indices.as_slice())
@@ -96,12 +97,15 @@ impl InputStreamBackend for CpalInputBackend {
                     };
                     let physical_channels = config.channels as usize;
                     let selected_channels = selected_channels.to_vec();
-                    let error_state = Arc::clone(&thread_state);
-                    let error_detail = Arc::clone(&thread_last_error);
+                    let on_error = stream_error::error_callback(
+                        Arc::clone(&thread_state),
+                        STATE_FAULTED,
+                        Arc::clone(&thread_last_error),
+                    );
                     let callback_latency = Arc::clone(&thread_latency);
                     let stream = device
                         .build_input_stream(
-                            &config,
+                            config,
                             move |frames: &[f32], info: &cpal::InputCallbackInfo| {
                                 // Input latency = when the callback ran minus
                                 // when the first frame in this buffer was
@@ -112,7 +116,7 @@ impl InputStreamBackend for CpalInputBackend {
                                 // observation (0 = never observed).
                                 let timestamp = info.timestamp();
                                 if let Some(latency) =
-                                    timestamp.callback.duration_since(&timestamp.capture)
+                                    timestamp.callback.checked_duration_since(timestamp.capture)
                                 {
                                     callback_latency
                                         .store(latency.as_micros() as u64, Ordering::Relaxed);
@@ -142,17 +146,7 @@ impl InputStreamBackend for CpalInputBackend {
                                     }
                                 }
                             },
-                            move |error| {
-                                // Stream errors arrive on a cpal backend
-                                // worker thread, NOT the audio callback, so
-                                // allocating the Display string and taking
-                                // the mutex here is safe; capture the detail
-                                // instead of discarding it.
-                                if let Ok(mut detail) = error_detail.lock() {
-                                    *detail = Some(error.to_string());
-                                }
-                                error_state.store(STATE_FAULTED, Ordering::Relaxed);
-                            },
+                            on_error,
                             None,
                         )
                         .map_err(|error| {
@@ -161,10 +155,7 @@ impl InputStreamBackend for CpalInputBackend {
                     stream.play().map_err(|error| {
                         InputStreamError::new(format!("start input stream: {error}"))
                     })?;
-                    Ok((
-                        stream,
-                        (config.sample_rate.0, reported_channels, device_name),
-                    ))
+                    Ok((stream, (config.sample_rate, reported_channels, device_name)))
                 })();
 
                 match open {

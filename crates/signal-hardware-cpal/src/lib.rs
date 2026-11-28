@@ -27,11 +27,14 @@
 //! This crate adds no locks or allocation on the callback path beyond cpal's
 //! own internals: the render callback moves into the stream closure once at
 //! open time and is called directly. Callers own the rest of the RT contract
-//! (see `signal_hardware::output_stream`).
+//! (see `signal_hardware::output_stream`). The cpal error callback can also
+//! run on the audio thread, so it follows the same rules (see
+//! `stream_error`).
 
 #![warn(missing_docs)]
 
 mod input;
+mod stream_error;
 
 use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};
 use std::sync::mpsc;
@@ -104,7 +107,16 @@ const COMMON_RATES_HZ: [u32; 6] = [44_100, 48_000, 88_200, 96_000, 176_400, 192_
 pub fn default_output_device_name() -> Option<String> {
     cpal::default_host()
         .default_output_device()
-        .and_then(|device| device.name().ok())
+        .and_then(|device| device_name(&device))
+}
+
+/// OS-reported device name. cpal 0.18 dropped `Device::name()`; the
+/// description carries the same OS name string.
+pub(crate) fn device_name(device: &cpal::Device) -> Option<String> {
+    device
+        .description()
+        .ok()
+        .map(|description| description.name().to_owned())
 }
 
 /// Enumerate real output devices with their supported configurations.
@@ -120,7 +132,9 @@ pub fn enumerate_output_devices() -> Result<Vec<OutputDeviceDescription>, Output
 
     let mut descriptions = Vec::new();
     for device in devices {
-        let Ok(name) = device.name() else { continue };
+        let Some(name) = device_name(&device) else {
+            continue;
+        };
         let Ok(default_config) = device.default_output_config() else {
             continue;
         };
@@ -130,10 +144,7 @@ pub fn enumerate_output_devices() -> Result<Vec<OutputDeviceDescription>, Output
             for config in configs {
                 max_channels = max_channels.max(config.channels());
                 for rate in COMMON_RATES_HZ {
-                    if rate >= config.min_sample_rate().0
-                        && rate <= config.max_sample_rate().0
-                        && !rates.contains(&rate)
-                    {
+                    if config.contains_rate(rate) && !rates.contains(&rate) {
                         rates.push(rate);
                     }
                 }
@@ -142,7 +153,7 @@ pub fn enumerate_output_devices() -> Result<Vec<OutputDeviceDescription>, Output
         rates.sort_unstable();
         descriptions.push(OutputDeviceDescription {
             is_default: default_name.as_deref() == Some(name.as_str()),
-            default_sample_rate_hz: default_config.sample_rate().0,
+            default_sample_rate_hz: default_config.sample_rate(),
             default_channels: default_config.channels(),
             supported_sample_rates_hz: rates,
             max_channels,
@@ -174,11 +185,11 @@ fn negotiate_config(
             }
             let rate = spec
                 .sample_rate_hz
-                .clamp(config.min_sample_rate().0, config.max_sample_rate().0);
+                .clamp(config.min_sample_rate(), config.max_sample_rate());
             let distance = rate.abs_diff(spec.sample_rate_hz);
             let candidate = cpal::StreamConfig {
                 channels: config.channels(),
-                sample_rate: cpal::SampleRate(rate),
+                sample_rate: rate,
                 buffer_size: cpal::BufferSize::Default,
             };
             if best
@@ -206,11 +217,10 @@ fn negotiate_config(
 /// owner thread, which drops the stream on the thread that built it.
 struct CpalOutputStream {
     state: Arc<AtomicU8>,
-    /// Display detail of the most recent cpal stream error. cpal delivers
-    /// stream errors on a backend worker thread — NOT the audio callback —
-    /// so formatting the string (allocation) and taking this mutex there is
-    /// acceptable; the audio path never touches it.
-    last_error: Arc<Mutex<Option<String>>>,
+    /// Most recent fatal cpal stream error. The error callback parks it here
+    /// without allocating or blocking; `last_error` formats it on the
+    /// caller's thread.
+    last_error: stream_error::ErrorSlot,
     /// Most recent callback→DAC latency in µs, stored by the data callback
     /// from cpal's `OutputCallbackInfo` timestamps. 0 = not yet observed.
     latency_micros: Arc<AtomicU64>,
@@ -239,10 +249,7 @@ impl OutputStreamHandle for CpalOutputStream {
     }
 
     fn last_error(&self) -> Option<String> {
-        self.last_error
-            .lock()
-            .ok()
-            .and_then(|detail| detail.clone())
+        stream_error::last_error(&self.last_error)
     }
 
     fn output_latency_micros(&self) -> Option<u64> {
@@ -277,7 +284,7 @@ impl OutputStreamBackend for CpalOutputBackend {
     ) -> Result<Box<dyn OutputStreamHandle>, OutputStreamError> {
         let state = Arc::new(AtomicU8::new(STATE_RUNNING));
         let thread_state = Arc::clone(&state);
-        let last_error: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+        let last_error: stream_error::ErrorSlot = Arc::new(Mutex::new(None));
         let thread_last_error = Arc::clone(&last_error);
         let latency_micros = Arc::new(AtomicU64::new(0));
         let thread_latency = Arc::clone(&latency_micros);
@@ -302,7 +309,7 @@ impl OutputStreamBackend for CpalOutputBackend {
                             .map_err(|error| {
                                 OutputStreamError::new(format!("enumerate output devices: {error}"))
                             })?
-                            .find(|device| device.name().ok().as_deref() == Some(name))
+                            .find(|device| device_name(device).as_deref() == Some(name))
                             .ok_or_else(|| {
                                 OutputStreamError::new(format!("output device not found: {name}"))
                             })?,
@@ -310,14 +317,17 @@ impl OutputStreamBackend for CpalOutputBackend {
                             .default_output_device()
                             .ok_or_else(|| OutputStreamError::new("no default output device"))?,
                     };
-                    let device_name = device.name().ok();
+                    let device_name = device_name(&device);
                     let config = negotiate_config(&device, &spec)?;
-                    let error_state = Arc::clone(&thread_state);
-                    let error_detail = Arc::clone(&thread_last_error);
+                    let on_error = stream_error::error_callback(
+                        Arc::clone(&thread_state),
+                        STATE_FAULTED,
+                        Arc::clone(&thread_last_error),
+                    );
                     let callback_latency = Arc::clone(&thread_latency);
                     let stream = device
                         .build_output_stream(
-                            &config,
+                            config,
                             move |frames: &mut [f32], info: &cpal::OutputCallbackInfo| {
                                 // Output latency = when this buffer will hit
                                 // the DAC minus when the callback ran. RT-safe:
@@ -326,25 +336,16 @@ impl OutputStreamBackend for CpalOutputBackend {
                                 // not have a usable pair (`None`): keep the
                                 // last observation (0 = never observed).
                                 let timestamp = info.timestamp();
-                                if let Some(latency) =
-                                    timestamp.playback.duration_since(&timestamp.callback)
+                                if let Some(latency) = timestamp
+                                    .playback
+                                    .checked_duration_since(timestamp.callback)
                                 {
                                     callback_latency
                                         .store(latency.as_micros() as u64, Ordering::Relaxed);
                                 }
                                 render(frames);
                             },
-                            move |error| {
-                                // Stream errors arrive on a cpal backend
-                                // worker thread, NOT the audio callback, so
-                                // allocating the Display string and taking
-                                // the mutex here is safe; capture the detail
-                                // instead of discarding it.
-                                if let Ok(mut detail) = error_detail.lock() {
-                                    *detail = Some(error.to_string());
-                                }
-                                error_state.store(STATE_FAULTED, Ordering::Relaxed);
-                            },
+                            on_error,
                             None,
                         )
                         .map_err(|error| {
@@ -353,7 +354,7 @@ impl OutputStreamBackend for CpalOutputBackend {
                     stream.play().map_err(|error| {
                         OutputStreamError::new(format!("start output stream: {error}"))
                     })?;
-                    Ok((stream, (config.sample_rate.0, config.channels, device_name)))
+                    Ok((stream, (config.sample_rate, config.channels, device_name)))
                 })();
 
                 match open {

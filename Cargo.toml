@@ -70,7 +70,7 @@ signal-host-local = { path = "crates/signal-host-local" }
 
 # External crates
 clap-sys = "0.5"
-cpal = "0.16"
+cpal = "0.18"
 csv = "1"
 hound = "3.5"
 json5 = "0.4"

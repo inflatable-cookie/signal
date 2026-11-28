@@ -1,10 +1,11 @@
 use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};
 use std::sync::mpsc;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use signal_hardware::{InputStreamHandle, InputStreamState};
 
 use super::{STATE_RUNNING, STATE_STOPPED};
+use crate::stream_error;
 
 pub(crate) fn copy_selected_channels(
     frames: &[f32],
@@ -29,11 +30,10 @@ pub(crate) fn copy_selected_channels(
 /// owner thread, which drops the stream on the thread that built it.
 pub(crate) struct CpalInputStream {
     pub(crate) state: Arc<AtomicU8>,
-    /// Display detail of the most recent cpal stream error. cpal delivers
-    /// stream errors on a backend worker thread — NOT the audio callback —
-    /// so formatting the string (allocation) and taking this mutex there is
-    /// acceptable; the audio path never touches it.
-    pub(crate) last_error: Arc<Mutex<Option<String>>>,
+    /// Most recent fatal cpal stream error. The error callback parks it here
+    /// without allocating or blocking; `last_error` formats it on the
+    /// caller's thread.
+    pub(crate) last_error: stream_error::ErrorSlot,
     /// Most recent ADC→callback latency in µs, stored by the data callback
     /// from cpal's `InputCallbackInfo` timestamps. 0 = not yet observed.
     pub(crate) latency_micros: Arc<AtomicU64>,
@@ -62,10 +62,7 @@ impl InputStreamHandle for CpalInputStream {
     }
 
     fn last_error(&self) -> Option<String> {
-        self.last_error
-            .lock()
-            .ok()
-            .and_then(|detail| detail.clone())
+        stream_error::last_error(&self.last_error)
     }
 
     fn input_latency_micros(&self) -> Option<u64> {
