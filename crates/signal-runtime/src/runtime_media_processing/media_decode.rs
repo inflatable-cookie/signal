@@ -3,13 +3,14 @@ use std::{fs, path::Path};
 use hound::SampleFormat as HoundSampleFormat;
 use signal_primitives::{AudioBuffer, ChannelLayout, SampleRate};
 use symphonia::core::{
-    audio::SampleBuffer as SymphoniaSampleBuffer,
-    codecs::{DecoderOptions as SymphoniaDecoderOptions, CODEC_TYPE_NULL},
+    codecs::{
+        audio::{AudioDecoderOptions as SymphoniaDecoderOptions, CODEC_ID_NULL_AUDIO},
+        CodecParameters as SymphoniaCodecParameters,
+    },
     errors::Error as SymphoniaError,
-    formats::FormatOptions as SymphoniaFormatOptions,
+    formats::{probe::Hint as SymphoniaHint, FormatOptions as SymphoniaFormatOptions},
     io::MediaSourceStream,
     meta::MetadataOptions as SymphoniaMetadataOptions,
-    probe::Hint as SymphoniaHint,
 };
 
 use crate::interfaces::{RuntimeError, RuntimeErrorKind};
@@ -97,12 +98,12 @@ pub(crate) fn decode_runtime_media_asset_with_symphonia(
         hint.with_extension(extension);
     }
 
-    let probed = symphonia::default::get_probe()
-        .format(
+    let mut format = symphonia::default::get_probe()
+        .probe(
             &hint,
             media_stream,
-            &SymphoniaFormatOptions::default(),
-            &SymphoniaMetadataOptions::default(),
+            SymphoniaFormatOptions::default(),
+            SymphoniaMetadataOptions::default(),
         )
         .map_err(|error| {
             RuntimeError::new(
@@ -114,11 +115,17 @@ pub(crate) fn decode_runtime_media_asset_with_symphonia(
             )
         })?;
 
-    let mut format = probed.format;
-    let track = format
+    let (track_id, codec_params) = format
         .tracks()
         .iter()
-        .find(|track| track.codec_params.codec != CODEC_TYPE_NULL)
+        .find_map(|track| match &track.codec_params {
+            Some(SymphoniaCodecParameters::Audio(params))
+                if params.codec != CODEC_ID_NULL_AUDIO =>
+            {
+                Some((track.id, params))
+            }
+            _ => None,
+        })
         .ok_or_else(|| {
             RuntimeError::new(
                 RuntimeErrorKind::UnsupportedCapability,
@@ -128,9 +135,13 @@ pub(crate) fn decode_runtime_media_asset_with_symphonia(
                 ),
             )
         })?;
-    let track_id = track.id;
+    // Symphonia 0.6 trims encoder delay and padding by default; 0.5 did not.
+    // Keep the untrimmed output so decoded frames stay unchanged.
     let mut decoder = symphonia::default::get_codecs()
-        .make(&track.codec_params, &SymphoniaDecoderOptions::default())
+        .make_audio_decoder(
+            codec_params,
+            &SymphoniaDecoderOptions::default().gapless(false),
+        )
         .map_err(|error| {
             RuntimeError::new(
                 RuntimeErrorKind::ResourceUnavailable,
@@ -144,9 +155,11 @@ pub(crate) fn decode_runtime_media_asset_with_symphonia(
     let mut sample_rate = None;
     let mut channel_count = None;
     let mut samples = Vec::new();
+    let mut interleaved = Vec::<f32>::new();
     loop {
         let packet = match format.next_packet() {
-            Ok(packet) => packet,
+            Ok(Some(packet)) => packet,
+            Ok(None) => break,
             Err(SymphoniaError::IoError(error))
                 if error.kind() == std::io::ErrorKind::UnexpectedEof =>
             {
@@ -166,7 +179,7 @@ pub(crate) fn decode_runtime_media_asset_with_symphonia(
                 ));
             }
         };
-        if packet.track_id() != track_id {
+        if packet.track_id != track_id {
             continue;
         }
         let decoded = match decoder.decode(&packet) {
@@ -182,19 +195,16 @@ pub(crate) fn decode_runtime_media_asset_with_symphonia(
                 ));
             }
         };
-        let spec = *decoded.spec();
-        let actual_channels = spec.channels.count();
+        let actual_channels = decoded.spec().channels().count();
         let output_channels = actual_channels.clamp(1, 2);
         if sample_rate.is_none() {
-            sample_rate = Some(spec.rate);
+            sample_rate = Some(decoded.spec().rate());
             channel_count = Some(output_channels);
         }
 
-        let mut sample_buffer = SymphoniaSampleBuffer::<f32>::new(decoded.capacity() as u64, spec);
-        sample_buffer.copy_interleaved_ref(decoded);
-        let interleaved = sample_buffer.samples();
+        decoded.copy_to_vec_interleaved(&mut interleaved);
         if actual_channels <= output_channels {
-            samples.extend_from_slice(interleaved);
+            samples.extend_from_slice(&interleaved);
         } else {
             for frame in interleaved.chunks(actual_channels) {
                 for sample in frame.iter().take(output_channels) {
