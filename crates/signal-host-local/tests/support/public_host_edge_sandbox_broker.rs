@@ -16,9 +16,8 @@ pub(crate) fn run_public_sandbox_broker(commands: &str) -> std::process::Output 
     restore_env("SIGNAL_HOST_DEMO_PLUGIN_FORMAT", None);
     restore_env("SIGNAL_HOST_DEMO_PLUGIN_ROOT", None);
     restore_env("SIGNAL_HOST_DEMO_PLUGIN_TYPE_ID", None);
-    let mut child = Command::new("cargo")
+    let mut child = Command::new(sandbox_broker_binary())
         .current_dir(workspace_root())
-        .args(["run", "-q", "-p", "signal-plugin-sandbox"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -55,7 +54,7 @@ pub(crate) struct SandboxBrokerEnvGuard {
 }
 
 impl SandboxBrokerEnvGuard {
-    pub(crate) fn enable_for_workspace_cargo_run() -> Self {
+    pub(crate) fn enable_for_workspace_broker() -> Self {
         let guard = sandbox_broker_env_lock();
         let old_command = std::env::var_os("SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND");
         let old_args = std::env::var_os("SIGNAL_PLUGIN_SANDBOX_BROKER_ARGS");
@@ -65,11 +64,11 @@ impl SandboxBrokerEnvGuard {
         let old_demo_plugin_type_id = std::env::var_os("SIGNAL_HOST_DEMO_PLUGIN_TYPE_ID");
 
         unsafe {
-            std::env::set_var("SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND", "cargo");
             std::env::set_var(
-                "SIGNAL_PLUGIN_SANDBOX_BROKER_ARGS",
-                "run -q -p signal-plugin-sandbox",
+                "SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND",
+                sandbox_broker_binary(),
             );
+            std::env::remove_var("SIGNAL_PLUGIN_SANDBOX_BROKER_ARGS");
             std::env::set_var(
                 "SIGNAL_PLUGIN_SANDBOX_BROKER_WORKDIR",
                 workspace_root().as_os_str(),
@@ -101,11 +100,11 @@ impl SandboxBrokerEnvGuard {
         let old_demo_plugin_type_id = std::env::var_os("SIGNAL_HOST_DEMO_PLUGIN_TYPE_ID");
 
         unsafe {
-            std::env::set_var("SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND", "cargo");
             std::env::set_var(
-                "SIGNAL_PLUGIN_SANDBOX_BROKER_ARGS",
-                "run -q -p signal-plugin-sandbox",
+                "SIGNAL_PLUGIN_SANDBOX_BROKER_COMMAND",
+                sandbox_broker_binary(),
             );
+            std::env::remove_var("SIGNAL_PLUGIN_SANDBOX_BROKER_ARGS");
             std::env::set_var(
                 "SIGNAL_PLUGIN_SANDBOX_BROKER_WORKDIR",
                 workspace_root().as_os_str(),
@@ -148,6 +147,55 @@ impl Drop for SandboxBrokerEnvGuard {
             self.old_demo_plugin_type_id.as_ref(),
         );
     }
+}
+
+/// The broker binary Cargo built for this test run.
+///
+/// Cargo exposes `CARGO_BIN_EXE_<name>` only for binaries in the test's own
+/// package, so this finds `signal-plugin-sandbox` in the target directory
+/// instead. A workspace test run builds it before any test starts, so broker
+/// timeouts never cover compilation. Tests must not invoke Cargo to obtain
+/// the broker.
+///
+/// Cargo uplifts binaries to `<target-dir>/<profile>`, but test executables
+/// stay under the build directory, whose layout varies by toolchain and is
+/// separate from the target directory under Oxide. So each ancestor of the
+/// test executable is tried both as the profile directory itself and as a
+/// profile name under `CARGO_TARGET_DIR` and the workspace `target/`.
+fn sandbox_broker_binary() -> &'static Path {
+    static BROKER: OnceLock<PathBuf> = OnceLock::new();
+    BROKER.get_or_init(|| {
+        let test_exe = std::env::current_exe().expect("test executable path should resolve");
+        let broker_name = format!("signal-plugin-sandbox{}", std::env::consts::EXE_SUFFIX);
+        let target_dirs: Vec<PathBuf> = std::env::var_os("CARGO_TARGET_DIR")
+            .map(PathBuf::from)
+            .into_iter()
+            .chain([workspace_root().join("target")])
+            .collect();
+
+        let mut candidates = Vec::new();
+        for dir in test_exe.ancestors().skip(1) {
+            candidates.push(dir.join(&broker_name));
+            if let Some(profile) = dir.file_name() {
+                for target_dir in &target_dirs {
+                    candidates.push(target_dir.join(profile).join(&broker_name));
+                }
+            }
+        }
+
+        candidates
+            .iter()
+            .find(|candidate| candidate.is_file())
+            .cloned()
+            .unwrap_or_else(|| {
+                panic!(
+                    "sandbox broker binary not found next to {}; run the workspace \
+                     tests (`effigy test`) or build it first with \
+                     `oxide build -p signal-plugin-sandbox`",
+                    test_exe.display()
+                )
+            })
+    })
 }
 
 fn workspace_root() -> PathBuf {

@@ -57,7 +57,7 @@ fn local_public_host_edge_sees_timeout_cleanup_from_sandbox_broker_process() {
 
 #[test]
 fn local_public_host_edge_can_route_vst3_sandbox_through_broker_process() {
-    let _guard = SandboxBrokerEnvGuard::enable_for_workspace_cargo_run();
+    let _guard = SandboxBrokerEnvGuard::enable_for_workspace_broker();
     let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     let mut host = LocalRuntimeHost::new(runtime);
     let scan_root = temp_public_local_vst3_scan_root();
@@ -115,7 +115,7 @@ fn local_public_host_edge_can_route_vst3_sandbox_through_broker_process() {
 
 #[test]
 fn local_public_host_edge_resets_vst3_continuity_after_broker_reattach() {
-    let _guard = SandboxBrokerEnvGuard::enable_for_workspace_cargo_run();
+    let _guard = SandboxBrokerEnvGuard::enable_for_workspace_broker();
     let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     let mut host = LocalRuntimeHost::new(runtime);
     let scan_root = temp_public_local_vst3_scan_root();
@@ -166,7 +166,7 @@ fn local_public_host_edge_resets_vst3_continuity_after_broker_reattach() {
 
 #[test]
 fn local_public_host_edge_can_route_au_sandbox_through_broker_process() {
-    let _guard = SandboxBrokerEnvGuard::enable_for_workspace_cargo_run();
+    let _guard = SandboxBrokerEnvGuard::enable_for_workspace_broker();
     let runtime = SignalRuntime::new(RuntimeConfig::local(48_000, 512));
     let mut host = LocalRuntimeHost::new(runtime);
     let scan_root = temp_public_local_au_scan_root();
