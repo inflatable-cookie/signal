@@ -173,7 +173,7 @@ fn prepare_dedicated_sandbox_attaches_from_real_broker_lease() {
         eprintln!("skipping: rustc unavailable for the CLAP fixture");
         return;
     }
-    let _guard = SandboxBrokerEnvGuard::enable_for_workspace_cargo_run();
+    let _guard = SandboxBrokerEnvGuard::enable_for_workspace_broker();
     let directory = unique_fixture_dir("clap-sandbox");
     let plugin_type_id = "com.signal.host-factory-clap-sandbox";
     signal_plugin_clap::fixture::compile_clap_fixture(
@@ -221,7 +221,7 @@ fn prepare_plugin_processor_shared_sandbox_shares_one_child() {
         eprintln!("skipping: rustc unavailable for the CLAP fixture");
         return;
     }
-    let _guard = SandboxBrokerEnvGuard::enable_for_workspace_cargo_run();
+    let _guard = SandboxBrokerEnvGuard::enable_for_workspace_broker();
     let directory = unique_fixture_dir("clap-shared-sandbox");
     let plugin_type_id = "com.signal.host-factory-clap-shared";
     signal_plugin_clap::fixture::compile_clap_fixture(
@@ -279,7 +279,7 @@ fn prepare_plugin_processor_shared_sandbox_child_crash_fans_out() {
         eprintln!("skipping: rustc unavailable for the CLAP fixture");
         return;
     }
-    let _guard = SandboxBrokerEnvGuard::enable_for_workspace_cargo_run();
+    let _guard = SandboxBrokerEnvGuard::enable_for_workspace_broker();
     let directory = unique_fixture_dir("clap-shared-crash");
     let plugin_type_id = "com.signal.host-factory-clap-shared-crash";
     signal_plugin_clap::fixture::compile_clap_fixture(
