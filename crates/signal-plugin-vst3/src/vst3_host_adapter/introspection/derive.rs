@@ -171,7 +171,12 @@ pub(crate) fn plist_to_io_error(error: plist::Error) -> io::Error {
 
 #[cfg(not(target_os = "macos"))]
 pub(crate) fn libloading_to_io(error: libloading::Error) -> io::Error {
-    io::Error::other(error.to_string())
+    // libloading 0.9 reports the loader's own message through `source()`;
+    // `Display` alone is just "dlopen failed" or "dlsym failed".
+    match std::error::Error::source(&error) {
+        Some(source) => io::Error::other(format!("{error}: {source}")),
+        None => io::Error::other(error.to_string()),
+    }
 }
 
 impl Vst3FactoryClass {

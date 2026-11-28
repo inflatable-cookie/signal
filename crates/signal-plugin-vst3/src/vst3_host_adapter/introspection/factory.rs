@@ -64,7 +64,7 @@ pub(crate) fn load_vst3_factory_classes_from_module(
             }
         }
         let get_plugin_factory = library
-            .get::<GetPluginFactoryProc>(b"GetPluginFactory\0")
+            .get::<GetPluginFactoryProc>(c"GetPluginFactory")
             .map_err(libloading_to_io)?;
         let snapshot = read_factory_classes(
             get_plugin_factory(),
@@ -217,18 +217,18 @@ pub(crate) fn read_factory_classes(
 }
 
 #[cfg(not(target_os = "macos"))]
-pub(crate) fn entry_symbol(platform: Vst3HostPlatform) -> &'static [u8] {
+pub(crate) fn entry_symbol(platform: Vst3HostPlatform) -> &'static std::ffi::CStr {
     match platform {
-        Vst3HostPlatform::MacOs => b"bundleEntry\0",
-        Vst3HostPlatform::Linux => b"ModuleEntry\0",
-        Vst3HostPlatform::Windows => b"InitDll\0",
+        Vst3HostPlatform::MacOs => c"bundleEntry",
+        Vst3HostPlatform::Linux => c"ModuleEntry",
+        Vst3HostPlatform::Windows => c"InitDll",
     }
 }
 #[cfg(not(target_os = "macos"))]
-pub(crate) fn exit_symbol(platform: Vst3HostPlatform) -> &'static [u8] {
+pub(crate) fn exit_symbol(platform: Vst3HostPlatform) -> &'static std::ffi::CStr {
     match platform {
-        Vst3HostPlatform::MacOs => b"bundleExit\0",
-        Vst3HostPlatform::Linux => b"ModuleExit\0",
-        Vst3HostPlatform::Windows => b"ExitDll\0",
+        Vst3HostPlatform::MacOs => c"bundleExit",
+        Vst3HostPlatform::Linux => c"ModuleExit",
+        Vst3HostPlatform::Windows => c"ExitDll",
     }
 }

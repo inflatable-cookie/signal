@@ -133,7 +133,7 @@ impl Lv2HostedInstance {
             .map_err(|_| Lv2HostingError::new("library_open_failed"))?;
         let lv2_descriptor = unsafe {
             library
-                .get::<Lv2DescriptorProc>(b"lv2_descriptor\0")
+                .get::<Lv2DescriptorProc>(c"lv2_descriptor")
                 .map_err(|_| Lv2HostingError::new("lv2_descriptor_missing"))
                 .map(|symbol| *symbol)?
         };

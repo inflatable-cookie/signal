@@ -59,7 +59,7 @@ impl LoadedClapEntry {
             .map_err(|_| ClapHostingError::new("library_open_failed"))?;
         let entry = unsafe {
             library
-                .get::<*const clap_plugin_entry>(b"clap_entry\0")
+                .get::<*const clap_plugin_entry>(c"clap_entry")
                 .map_err(|_| ClapHostingError::new("clap_entry_missing"))
                 .map(|symbol| *symbol)?
         };
